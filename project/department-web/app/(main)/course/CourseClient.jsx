@@ -9,11 +9,6 @@ export default function CourseClient() {
             <p className="max-w-xl text-center text-sm text-gray-500">
                 ระบบนี้เป็นตัวอย่างการสร้างเว็บแอปพลิเคชันด้วย Next.js 13 และ Tailwind CSS โดยมีฟีเจอร์พื้นฐาน เช่น การจัดการหลักสูตร การจัดการข้อมูล และการแสดงผลข้อมูลต่าง ๆ
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-4">
-                <Button href="/layout-demo" variant="primary" icon="arrowRight">
-                    Example components
-                </Button>
-            </div>
         </div>
     );
 }
