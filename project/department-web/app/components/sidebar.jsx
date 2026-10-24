@@ -14,19 +14,19 @@ import Icon from "./icon";
 export const ADMIN_BASE = "/Admin";
 
 export const SIDEBAR_ITEMS = [
-  { label: "แดชบอร์ด", path: "/home", icon: "dashboard" },
-  { label: "จัดการข่าวสาร", path: "/news", icon: "news" },
-  { label: "จัดการหลักสูตร", path: "/course", icon: "book" },
-  { label: "จัดการปฏิทิน", path: "/calender", icon: "calendar" },
-  { label: "บุคลากรและอาจารย์", path: "/staff-teacher", icon: "users" },
-  { label: "จัดการผู้ใช้งาน", path: "/users", icon: "userCog" },
+  { label: "แดชบอร์ด", href: "/Admin", icon: "dashboard" },
+  { label: "จัดการข่าวสาร", href: `${ADMIN_BASE}/news`, icon: "news" },
+  { label: "จัดการหลักสูตร", href: `${ADMIN_BASE}/course`, icon: "book" },
+  { label: "จัดการปฏิทิน", href: `${ADMIN_BASE}/calender`, icon: "calendar" },
+  { label: "บุคลากรและอาจารย์", href: `${ADMIN_BASE}/staff-teacher`, icon: "users" },
+  { label: "จัดการผู้ใช้งาน", href: `${ADMIN_BASE}/users`, icon: "userCog" },
 ];
 
 export default function Sidebar({ version = "v1.0.0" }) {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 flex h-screen w-64 flex-col bg-[#0033A0] text-white">
+    <aside className="fixed top-15 inset-y-0 left-0 z-40 flex h-screen w-64 flex-col bg-[#0033A0] text-white">
         {/* หัวข้อระบบ */}
         <div className="flex items-start justify-between px-6 pb-4 pt-6">
           <div>
@@ -42,7 +42,7 @@ export default function Sidebar({ version = "v1.0.0" }) {
         {/* รายการเมนู */}
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
           {SIDEBAR_ITEMS.map((item) => {
-            const href = `${ADMIN_BASE}${item.path}`;
+            const href = item.href;
             const active = pathname === href || pathname.startsWith(href + "/");
             return (
               <Link
