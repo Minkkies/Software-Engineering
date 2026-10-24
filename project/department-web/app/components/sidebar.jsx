@@ -6,7 +6,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import Icon from "./icon";
+import Icon from "./IconComponent";
 
 // route group (backend) กับ (main) ใช้ชื่อโฟลเดอร์ซ้ำกัน (home, course, calender)
 // ซึ่งจะได้ URL ชนกัน จึงแนะนำให้ย้ายโฟลเดอร์หลังบ้านไปไว้ใต้ app/(backend)/admin/
@@ -43,7 +43,9 @@ export default function Sidebar({ version = "v1.0.0" }) {
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
           {SIDEBAR_ITEMS.map((item) => {
             const href = item.href;
-            const active = pathname === href || pathname.startsWith(href + "/");
+            const active =
+              pathname === href ||
+              (href !== ADMIN_BASE && pathname.startsWith(href + "/"));
             return (
               <Link
                 key={href}

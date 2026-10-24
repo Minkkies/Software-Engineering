@@ -1,4 +1,4 @@
-// components/icon.jsx
+// components/IconComponent.jsx
 // ไอคอน SVG ทั้งหมดอยู่ในไฟล์นี้ ปรับขนาดผ่าน prop `size` (px หรือ string เช่น "1.5rem")
 // สีใช้ currentColor => เปลี่ยนสีด้วย className เช่น text-[#0033A0]
 //
@@ -94,6 +94,7 @@ const PATHS = {
   x: <path d="M18 6 6 18M6 6l12 12" />,
   chevronDown: <path d="m6 9 6 6 6-6" />,
   chevronRight: <path d="m9 18 6-6-6-6" />,
+  chevronLeft: <path d="m15 18-6-6 6-6" />,
   arrowRight: <path d="M5 12h14M12 5l7 7" />,
   plus: <path d="M12 5v14M5 12h14" />,
   bell: (

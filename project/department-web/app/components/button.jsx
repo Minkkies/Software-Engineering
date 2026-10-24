@@ -9,7 +9,7 @@
 //   <Button variant="ghost" icon="bell" aria-label="แจ้งเตือน" />   // ปุ่มไอคอนล้วน
 
 import Link from "next/link";
-import Icon from "./icon";
+import Icon from "./IconComponent";
 
 const VARIANTS = {
   primary:

@@ -6,7 +6,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import Icon from "./icon";
+import Icon from "./IconComponent";
 import Button from "./button";
 
 // ชื่อโฟลเดอร์ใน app/(main)/ => URL (route group ไม่ปรากฏใน URL)
@@ -47,7 +47,7 @@ export default function Navbar({ user = null, onLogout }) {
 
   return (
     <header className="sticky top-0 z-1000 border-b border-gray-200 bg-[#F8F9FB]/95 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 sm:px-6">
+      <div className="flex h-16 w-full items-center gap-6 px-4 sm:px-6">
         {/* โลโก้ */}
         <Link href="/home" className="flex shrink-0 items-center gap-2.5">
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#0033A0] text-white">
@@ -64,7 +64,7 @@ export default function Navbar({ user = null, onLogout }) {
         </Link>
 
         {/* เมนูหลัก (desktop) */}
-        <nav className="hidden flex-1 items-center justify-center gap-1 xl:flex">
+        <nav className="hidden items-center gap-1 xl:flex">
           {NAV_LINKS.map((link) => {
             const active = isActive(pathname, link.href);
             return (
@@ -84,7 +84,7 @@ export default function Navbar({ user = null, onLogout }) {
           })}
         </nav>
 
-        <div className="ml-auto flex items-center gap-3 xl:ml-0">
+        <div className="ml-auto flex items-center gap-3">
           {/* ช่องค้นหา (desktop) */}
           <form onSubmit={submitSearch} className="relative hidden lg:block">
             <Icon

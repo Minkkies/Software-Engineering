@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Icon, { iconNames } from "@components/icon";
+import Icon, { iconNames } from "@components/IconComponent";
 
 export default function IconExamplesPage() {
   const [iconSize, setIconSize] = useState(24);

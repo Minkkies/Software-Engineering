@@ -5,7 +5,7 @@
 
 import Link from "next/link";
 import Button from "@components/button";
-import Icon from "@components/icon";
+import Icon from "@components/IconComponent";
 import { ADMIN_BASE } from "@components/sidebar";
 
 // ---------- ข้อมูลตัวอย่าง ----------
