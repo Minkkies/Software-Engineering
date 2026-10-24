@@ -4,7 +4,7 @@ import Sidebar from "@components/sidebar";
 export default function LayoutExamplesPage() {
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-[#F5F6F8]">
-      <div className="min-h-[calc(100vh-4rem)]">
+      <div className="ml-64 min-h-[calc(100vh-4rem)]">
         <Sidebar />
 
         <main className="min-w-0 flex-1">
@@ -14,7 +14,7 @@ export default function LayoutExamplesPage() {
                 ตัวอย่างคอมโพเนนต์
               </h1>
               <p className="mt-2 text-sm text-gray-500">
-                กดปุ่มเพื่อเปิดดูตัวอย่างแต่ละหน้า
+                ดูตัวอย่างของคอมโพเนนต์ต่างๆ
               </p>
             </section>
 
