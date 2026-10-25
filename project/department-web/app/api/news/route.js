@@ -11,7 +11,7 @@ const fail = (message, status = 400) =>
 async function requireStaff() {
   const ctx = await getSessionUser();
   if (!ctx.user) return { res: fail("กรุณาเข้าสู่ระบบ", 401) };
-  if (!["admin", "staff"].includes(ctx.profile?.role))
+  if (!ctx.profile?.is_active || !["admin", "staff"].includes(ctx.profile.role))
     return { res: fail("ไม่มีสิทธิ์จัดการข่าว", 403) };
   return ctx;
 }
@@ -46,7 +46,7 @@ async function fetchRecord(supabase, id) {
 export async function POST(request) {
   const ctx = await requireStaff();
   if (ctx.res) return ctx.res;
-  const { supabase, user, profile } = ctx;
+  const { supabase, user } = ctx;
 
   try {
     const fd = await request.formData();
@@ -102,7 +102,6 @@ export async function POST(request) {
         .insert({
           ...row,
           author_id: user.id,
-          author_name: profile.full_name || profile.email,
         })
         .select("id")
         .single();
@@ -196,16 +195,22 @@ export async function DELETE(request) {
   if (ctx.res) return ctx.res;
   const { supabase } = ctx;
   const { id } = await request.json();
+  if (!id || typeof id !== "string") return fail("ไม่พบรหัสข่าวที่ต้องการลบ");
 
-  const { data: news } = await supabase
+  const { data: news, error: newsReadError } = await supabase
     .from("news")
     .select("cover_url")
     .eq("id", id)
     .maybeSingle();
-  const { data: files } = await supabase
+  if (newsReadError) return fail(newsReadError.message, 500);
+  if (!news) return fail("ไม่พบข่าวนี้หรือไม่มีสิทธิ์ลบ", 404);
+
+  const { data: files, error: filesReadError } = await supabase
     .from("news_attachments")
     .select("file_path")
     .eq("news_id", id);
+  if (filesReadError) return fail(filesReadError.message, 500);
+
   const { data, error } = await supabase
     .from("news")
     .delete()
