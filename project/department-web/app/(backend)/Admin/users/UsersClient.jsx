@@ -5,6 +5,7 @@ import { createClient } from "@lib/supabase/client";
 import Button from "@components/button";
 import InfoCards from "@components/InfoCards";
 import DataTable, { downloadCsv } from "@components/DataTable";
+import ConfirmDialog from "@components/ConfirmDialog";
 
 const ROLES = {
     admin: "ผู้ดูแลระบบ",
@@ -103,6 +104,8 @@ export default function UsersClient() {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [deleteTarget, setDeleteTarget] = useState(null);
+    const [deleting, setDeleting] = useState(false);
     const tableRef = useRef(null);
 
     async function load() {
@@ -161,13 +164,21 @@ export default function UsersClient() {
     }
 
     async function handleDelete(user) {
-        if (!window.confirm(`ต้องการลบผู้ใช้งาน "${user.firstName} ${user.lastName}" ใช่หรือไม่?`)) return;
-        const response = await fetch(`/api/admin/users?id=${encodeURIComponent(user.id)}`, { method: "DELETE" });
+        setDeleteTarget(user);
+    }
+
+    async function confirmDelete() {
+        if (!deleteTarget) return;
+        setDeleting(true);
+        const response = await fetch(`/api/admin/users?id=${encodeURIComponent(deleteTarget.id)}`, { method: "DELETE" });
         if (!response.ok) {
             const result = await response.json();
             setError(result.error || "ไม่สามารถลบผู้ใช้งานได้");
+        } else {
+            setDeleteTarget(null);
+            await load();
         }
-        else await load();
+        setDeleting(false);
     }
 
     function handleExport() {
@@ -231,6 +242,15 @@ export default function UsersClient() {
             </div>
 
             <InfoCards />
+            <ConfirmDialog
+                open={Boolean(deleteTarget)}
+                title="ยืนยันการลบผู้ใช้งาน"
+                message={deleteTarget ? `ต้องการลบผู้ใช้งาน "${deleteTarget.firstName} ${deleteTarget.lastName}" ใช่หรือไม่? การลบบัญชีจะไม่สามารถย้อนกลับได้` : ""}
+                confirmLabel="ลบผู้ใช้งาน"
+                loading={deleting}
+                onConfirm={confirmDelete}
+                onCancel={() => setDeleteTarget(null)}
+            />
         </div>
     );
 }

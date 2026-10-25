@@ -121,25 +121,20 @@ export default function UserFormClient({ userId }) {
         };
         try {
             if (isEdit) {
-                const supabase = createClient();
-                const { error } = await supabase
-                    .from("profiles")
-                    .update({
-                        full_name: `${payload.firstName} ${payload.lastName}`.trim(),
-                        email: payload.email,
-                        student_id: payload.studentId || null,
-                        role: payload.role,
-                        is_active: payload.status === "active",
-                    })
-                    .eq("id", userId);
-                if (error) throw new Error(error.message);
+                const response = await fetch("/api/admin/users", {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ ...payload, id: userId }),
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(result.error || "ไม่สามารถบันทึกการแก้ไขได้");
             } else {
                 const response = await fetch("/api/admin/users", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(payload),
                 });
-                const result = await response.json();
+                const result = await response.json().catch(() => ({}));
                 if (!response.ok) throw new Error(result.error || "ไม่สามารถสร้างบัญชีได้");
             }
             router.push("/Admin/users");

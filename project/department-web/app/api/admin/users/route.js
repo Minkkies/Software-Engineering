@@ -98,6 +98,91 @@ async function deleteUser(request) {
   return NextResponse.json({ ok: true });
 }
 
+
+// แก้ไขผู้ใช้: อัปเดตทั้ง auth.users (อีเมล, ชื่อ, สถานะ) และ public.profiles
+async function updateUser(request) {
+  const { user, error: authError } = await requireAdmin();
+  if (authError) return authError;
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "ข้อมูลที่ส่งมาไม่ถูกต้อง" }, { status: 400 });
+  }
+
+  const id = String(body.id ?? "");
+  const firstName = String(body.firstName ?? "").trim();
+  const lastName = String(body.lastName ?? "").trim();
+  const email = String(body.email ?? "").trim().toLowerCase();
+  const studentId = String(body.studentId ?? "").trim();
+  const role = body.role;
+  const isActive = body.status !== "suspended";
+
+  if (!id) return NextResponse.json({ error: "ไม่พบ id ผู้ใช้งาน" }, { status: 400 });
+  if (!firstName || !lastName) return NextResponse.json({ error: "กรุณากรอกชื่อและนามสกุล" }, { status: 400 });
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "รูปแบบอีเมลไม่ถูกต้อง" }, { status: 400 });
+  if (!ROLES.includes(role)) return NextResponse.json({ error: "บทบาทไม่ถูกต้อง" }, { status: 400 });
+  if (role === "student" && !studentId) return NextResponse.json({ error: "นักศึกษาต้องระบุรหัสประจำตัว" }, { status: 400 });
+  // กัน admin ล็อกตัวเองออกจากระบบ
+  if (id === user.id && (role !== "admin" || !isActive)) {
+    return NextResponse.json({ error: "ไม่สามารถลดสิทธิ์หรือระงับบัญชีของตัวเองได้" }, { status: 400 });
+  }
+
+  const admin = createAdminClient();
+  const fullName = `${firstName} ${lastName}`;
+
+  const { data: existing, error: getError } = await admin.auth.admin.getUserById(id);
+  if (getError || !existing?.user) {
+    return NextResponse.json({ error: "ไม่พบผู้ใช้งานรายการนี้" }, { status: 404 });
+  }
+  const oldUser = existing.user;
+
+  // 1) อัปเดต auth.users (ถ้าเปลี่ยนอีเมลจะมีผลกับอีเมลที่ใช้ล็อกอินทันที)
+  const { error: updateAuthError } = await admin.auth.admin.updateUserById(id, {
+    email,
+    email_confirm: true,
+    user_metadata: { ...oldUser.user_metadata, full_name: fullName },
+    ban_duration: isActive ? "none" : "876000h", // ระงับ = แบนในระบบ Auth ด้วย
+  });
+
+  if (updateAuthError) {
+    const duplicated = /already|registered|exists/i.test(updateAuthError.message);
+    return NextResponse.json(
+      { error: duplicated ? "อีเมลนี้ถูกใช้งานแล้ว" : updateAuthError.message },
+      { status: duplicated ? 409 : 400 }
+    );
+  }
+
+  // 2) อัปเดต profiles
+  const { error: profileError } = await admin
+    .from("profiles")
+    .update({
+      full_name: fullName,
+      email,
+      student_id: studentId || null,
+      role,
+      is_active: isActive,
+    })
+    .eq("id", id);
+
+  if (profileError) {
+    // ย้อนกลับ auth ให้เป็นค่าเดิม เพื่อไม่ให้สองที่ไม่ตรงกัน
+    await admin.auth.admin.updateUserById(id, {
+      email: oldUser.email,
+      user_metadata: oldUser.user_metadata,
+      ban_duration: oldUser.banned_until ? "876000h" : "none",
+    });
+    const duplicated = profileError.code === "23505";
+    return NextResponse.json(
+      { error: duplicated ? "รหัสประจำตัวนี้ถูกใช้งานแล้ว" : profileError.message },
+      { status: duplicated ? 409 : 400 }
+    );
+  }
+
+  return NextResponse.json({ ok: true });
+}
+
 // ครอบด้วย try/catch เพื่อให้ตอบ JSON เสมอ (ไม่ใช่ 500 ที่ body ว่าง)
 function withErrorHandling(handler) {
   return async (request) => {
@@ -115,3 +200,4 @@ function withErrorHandling(handler) {
 
 export const POST = withErrorHandling(createUser);
 export const DELETE = withErrorHandling(deleteUser);
+export const PATCH = withErrorHandling(updateUser);
