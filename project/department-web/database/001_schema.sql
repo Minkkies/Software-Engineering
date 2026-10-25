@@ -145,21 +145,22 @@ create table public.calendar_events (
 );
 create index calendar_events_date_idx on public.calendar_events (start_date, end_date);
 
+-- เดี๋ยวมาลบ
 -- ---------- ติดต่อเจ้าหน้าที่ / แจ้งเตือน / audit log ----------
-create table public.contact_messages (
-  id          uuid primary key default gen_random_uuid(),
-  user_id     uuid references public.profiles(id) on delete set null,
-  name        text not null,
-  email       text not null,
-  subject     text,
-  message     text not null,
-  status      public.contact_status not null default 'new',
-  created_at  timestamptz not null default now()
-);
+-- create table public.contact_messages (
+--   id          uuid primary key default gen_random_uuid(),
+--   user_id     uuid references public.profiles(id) on delete set null,
+--   name        text not null,
+--   email       text not null,
+--   subject     text,
+--   message     text not null,
+--   status      public.contact_status not null default 'new',
+--   created_at  timestamptz not null default now()
+-- );
 
-create table public.notification_settings (
-  user_id        uuid primary key references public.profiles(id) on delete cascade,
-  email_enabled  boolean not null default false,
-  line_enabled   boolean not null default false,
-  push_enabled   boolean not null default false
-);
+-- create table public.notification_settings (
+--   user_id        uuid primary key references public.profiles(id) on delete cascade,
+--   email_enabled  boolean not null default false,
+--   line_enabled   boolean not null default false,
+--   push_enabled   boolean not null default false
+-- );

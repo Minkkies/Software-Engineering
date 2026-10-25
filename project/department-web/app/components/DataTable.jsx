@@ -5,7 +5,7 @@ import Link from "next/link";
 import Button from "@components/button";
 
 /**
- * ดาวน์โหลดข้อมูลเป็น CSV (ใส่ BOM เพื่อให้ Excel อ่านภาษาไทยได้ถูกต้อง)
+ * ดาวน์โห   ดข้อมูลเป็น CSV (ใส่ BOM เพื่อให้ Excel อ่านภาษาไทยได้ถูกต้อง)
  * @param {string} filename
  * @param {string[]} headers
  * @param {Array<Array<any>>} rows

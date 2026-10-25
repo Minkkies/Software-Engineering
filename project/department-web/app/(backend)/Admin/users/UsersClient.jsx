@@ -1,28 +1,44 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ROLES, STATUSES, getUsers, updateUser, deleteUser } from "./userStore";
+import { createClient } from "@lib/supabase/client";
 import Button from "@components/button";
 import InfoCards from "@components/InfoCards";
 import DataTable, { downloadCsv } from "@components/DataTable";
 
+const ROLES = {
+    admin: "ผู้ดูแลระบบ",
+    staff: "เจ้าหน้าที่",
+    teacher: "อาจารย์",
+    student: "นักศึกษา",
+};
+
+const STATUSES = {
+    active: "ใช้งานอยู่",
+    suspended: "ระงับการใช้งาน",
+};
+
 const ROLE_BADGE = {
     admin: "bg-[#0A2FA3] text-white",
     staff: "bg-blue-100 text-blue-800",
+    teacher: "bg-sky-100 text-sky-800",
     student: "border border-gray-400 bg-white text-gray-700",
 };
 
 const STATUS_STYLE = {
     active: "text-green-600",
-    pending: "text-amber-600",
-    suspended: "text-gray-500",
+    suspended: "text-red-500",
 };
 
 function Avatar({ user }) {
-    const colors = { admin: "bg-blue-200 text-blue-900", staff: "bg-amber-200 text-amber-900", student: "bg-indigo-200 text-indigo-900" };
+    const colors = { admin: "bg-blue-200 text-blue-900", 
+        teacher: "bg-sky-200 text-sky-900", 
+        staff: "bg-amber-200 text-amber-900", 
+        student: "bg-indigo-200 text-indigo-900" 
+    };
     return (
         <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${colors[user.role]}`}>
-            {user.firstName.slice(0, 1)}
+            {user.firstName?.slice(0, 1) || "?"}
         </span>
     );
 }
@@ -86,10 +102,38 @@ const searchText = (u) => `${u.title} ${u.firstName} ${u.lastName} ${u.email} ${
 export default function UsersClient() {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
     const tableRef = useRef(null);
 
     async function load() {
-        setUsers(await getUsers());
+        setLoading(true);
+        setError("");
+        const supabase = createClient();
+        const { data, error: queryError } = await supabase
+            .from("profiles")
+            .select("id, full_name, email, student_id, role, is_active")
+            .order("created_at", { ascending: false });
+
+        if (queryError) {
+            setError(queryError.message);
+        } else {
+            setUsers(
+                data.map((profile) => {
+                    const [firstName = "", ...lastNames] = (profile.full_name ?? "").trim().split(/\s+/);
+                    return {
+                        id: profile.id,
+                        title: "",
+                        firstName,
+                        lastName: lastNames.join(" "),
+                        email: profile.email ?? "",
+                        studentId: profile.student_id ?? "",
+                        role: profile.role,
+                        status: profile.is_active ? "active" : "suspended",
+                        lastLogin: "-",
+                    };
+                })
+            );
+        }
         setLoading(false);
     }
 
@@ -107,14 +151,23 @@ export default function UsersClient() {
     );
 
     async function handleToggleSuspend(user) {
-        await updateUser(user.id, { status: user.status === "suspended" ? "active" : "suspended" });
-        await load();
+        const supabase = createClient();
+        const { error: updateError } = await supabase
+            .from("profiles")
+            .update({ is_active: user.status === "suspended" })
+            .eq("id", user.id);
+        if (updateError) setError(updateError.message);
+        else await load();
     }
 
     async function handleDelete(user) {
         if (!window.confirm(`ต้องการลบผู้ใช้งาน "${user.firstName} ${user.lastName}" ใช่หรือไม่?`)) return;
-        await deleteUser(user.id);
-        await load();
+        const response = await fetch(`/api/admin/users?id=${encodeURIComponent(user.id)}`, { method: "DELETE" });
+        if (!response.ok) {
+            const result = await response.json();
+            setError(result.error || "ไม่สามารถลบผู้ใช้งานได้");
+        }
+        else await load();
     }
 
     function handleExport() {
@@ -152,8 +205,10 @@ export default function UsersClient() {
             </div>
 
             {/* สถิติ */}
+            {error && <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
-                <StatCard label="ผู้ใช้งานทั้งหมด" value={stats.total} note="ข้อมูลจำลอง (mock)" noteClass="text-green-600" />
+                <StatCard label="ผู้ใช้งานทั้งหมด" value={stats.total} note="ข้อมูลจาก Supabase" noteClass="text-green-600" />
                 <StatCard label="อาจารย์และบุคลากร" value={stats.staff} note="รวมทุกสาขาวิชา" />
                 <StatCard label="นักศึกษาปัจจุบัน" value={stats.students} note="Active Status" noteClass="text-green-600" />
             </div>

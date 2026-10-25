@@ -2,21 +2,72 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createClient } from "@lib/supabase/client";
 import { AuthShell, BluePanel, Field, PasswordField, SubmitButton, Icon } from "@components/AuthShell";
 
 export default function LoginClient() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
+    setError("");
+
     try {
-      // TODO: เรียก API เข้าสู่ระบบ เช่น await fetch("/api/auth/login", {...})
-      console.log({ email, password, remember });
+      const supabase = createClient();
+
+      // 1) ล็อกอินกับ Supabase Auth
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (signInError) {
+        setError(
+          signInError.message === "Invalid login credentials"
+            ? "อีเมลหรือรหัสผ่านไม่ถูกต้อง"
+            : signInError.message
+        );
+        return;
+      }
+
+      // 2) ดึง profile เพื่อเช็ก role และสถานะบัญชี
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role, is_active")
+        .eq("id", data.user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        await supabase.auth.signOut();
+        setError(profileError.message);
+        return;
+      }
+
+      if (!profile) {
+        await supabase.auth.signOut();
+        setError("ไม่พบข้อมูลโปรไฟล์ของบัญชีนี้ กรุณาติดต่อผู้ดูแลระบบ");
+        return;
+      }
+
+      if (!profile.is_active) {
+        await supabase.auth.signOut();
+        setError("บัญชีนี้ถูกระงับการใช้งาน");
+        return;
+      }
+
+      // 3) พาไปหน้าตาม role แล้ว refresh เพื่อให้ Server Component อ่าน session ใหม่
+      router.push(profile.role === "admin" ? "/Admin/users" : "/");
+      router.refresh();
+    } catch (err) {
+      setError(err?.message || "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
     } finally {
       setLoading(false);
     }
@@ -63,6 +114,12 @@ export default function LoginClient() {
       </div>
 
       <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
+        {error && (
+          <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+            {error}
+          </p>
+        )}
+
         <Field
           label="อีเมล"
           icon={Icon.mail}
@@ -98,7 +155,7 @@ export default function LoginClient() {
           จดจำฉันในอุปกรณ์นี้
         </label>
 
-        <SubmitButton disabled={loading}>เข้าสู่ระบบ</SubmitButton>
+        <SubmitButton disabled={loading}>{loading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}</SubmitButton>
       </form>
     </AuthShell>
   );

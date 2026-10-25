@@ -3,14 +3,27 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ROLES, STATUSES, getUserById, createUser, updateUser } from "./userStore";
+import { createClient } from "@lib/supabase/client";
 import Button from "@components/button";
+
+const ROLES = {
+    admin: "ผู้ดูแลระบบ",
+    staff: "เจ้าหน้าที่",
+    teacher: "อาจารย์",
+    student: "นักศึกษา",
+};
+
+const STATUSES = {
+    active: "ใช้งานอยู่",
+    suspended: "ระงับการใช้งาน",
+};
 
 const EMPTY_FORM = {
     title: "",
     firstName: "",
     lastName: "",
     email: "",
+    password: "",
     studentId: "",
     role: "staff",
     status: "active",
@@ -42,13 +55,34 @@ export default function UserFormClient({ userId }) {
     const [loading, setLoading] = useState(isEdit);
     const [notFound, setNotFound] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [submitError, setSubmitError] = useState("");
 
     useEffect(() => {
         if (!isEdit) return;
         (async () => {
-            const user = await getUserById(userId);
-            if (user) setForm({ ...EMPTY_FORM, ...user });
-            else setNotFound(true);
+            const supabase = createClient();
+            const { data: profile, error } = await supabase
+                .from("profiles")
+                .select("id, full_name, email, student_id, role, is_active")
+                .eq("id", userId)
+                .maybeSingle();
+
+            if (error) {
+                setSubmitError(error.message);
+            } else if (profile) {
+                const [firstName = "", ...lastNames] = (profile.full_name ?? "").split(" ");
+                setForm({
+                    ...EMPTY_FORM,
+                    firstName,
+                    lastName: lastNames.join(" "),
+                    email: profile.email ?? "",
+                    studentId: profile.student_id ?? "",
+                    role: profile.role,
+                    status: profile.is_active ? "active" : "suspended",
+                });
+            } else {
+                setNotFound(true);
+            }
             setLoading(false);
         })();
     }, [isEdit, userId]);
@@ -64,6 +98,7 @@ export default function UserFormClient({ userId }) {
         if (!form.lastName.trim()) e.lastName = "กรุณากรอกนามสกุล";
         if (!form.email.trim()) e.email = "กรุณากรอกอีเมล";
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "รูปแบบอีเมลไม่ถูกต้อง";
+        if (!isEdit && form.password.length < 8) e.password = "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร";
         if (form.studentId && !/^\d{8}$|^\d{10}$/.test(form.studentId)) e.studentId = "รหัสประจำตัวต้องเป็นตัวเลข 8 หรือ 10 หลัก";
         if (form.role === "student" && !form.studentId) e.studentId = "นักศึกษาต้องระบุรหัสประจำตัว";
         setErrors(e);
@@ -74,15 +109,44 @@ export default function UserFormClient({ userId }) {
         ev.preventDefault();
         if (!validate()) return;
         setSaving(true);
+        setSubmitError("");
         const payload = {
-            ...form,
             firstName: form.firstName.trim(),
             lastName: form.lastName.trim(),
             email: form.email.trim(),
+            password: form.password,
+            studentId: form.studentId,
+            role: form.role,
+            status: form.status,
         };
-        if (isEdit) await updateUser(userId, payload);
-        else await createUser(payload);
-        router.push("/Admin/users");
+        try {
+            if (isEdit) {
+                const supabase = createClient();
+                const { error } = await supabase
+                    .from("profiles")
+                    .update({
+                        full_name: `${payload.firstName} ${payload.lastName}`.trim(),
+                        email: payload.email,
+                        student_id: payload.studentId || null,
+                        role: payload.role,
+                        is_active: payload.status === "active",
+                    })
+                    .eq("id", userId);
+                if (error) throw new Error(error.message);
+            } else {
+                const response = await fetch("/api/admin/users", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || "ไม่สามารถสร้างบัญชีได้");
+            }
+            router.push("/Admin/users");
+        } catch (error) {
+            setSubmitError(error.message || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+            setSaving(false);
+        }
     }
 
     if (loading) return <div className="p-8 text-center text-gray-400">กำลังโหลดข้อมูล...</div>;
@@ -98,7 +162,7 @@ export default function UserFormClient({ userId }) {
         );
     }
 
-    const statusOptions = isEdit ? ["active", "pending", "suspended"] : ["active", "pending"];
+    const statusOptions = isEdit ? ["active", "suspended"] : ["active"];
 
     return (
         <div className="min-h-[calc(100vh-4rem)] bg-[#F5F6F8] p-4 sm:p-8">
@@ -127,9 +191,11 @@ export default function UserFormClient({ userId }) {
                                 <Field label="อีเมลมหาวิทยาลัย" error={errors.email}>
                                     <input type="email" className={`${INPUT} ${errors.email ? "border-red-400" : "border-gray-200"}`} value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="username@university.ac.th" />
                                 </Field>
-                                <Field label="รหัสประจำตัว (ถ้ามี)" error={errors.studentId}>
-                                    <input inputMode="numeric" maxLength={10} className={`${INPUT} ${errors.studentId ? "border-red-400" : "border-gray-200"}`} value={form.studentId} onChange={(e) => set("studentId", e.target.value.replace(/\D/g, ""))} placeholder="ระบุเลขประจำตัว 8 หรือ 10 หลัก" />
-                                </Field>
+                                {!isEdit && (
+                                    <Field label="รหัสผ่านเริ่มต้น" error={errors.password}>
+                                        <input type="password" minLength={8} autoComplete="new-password" className={`${INPUT} ${errors.password ? "border-red-400" : "border-gray-200"}`} value={form.password} onChange={(e) => set("password", e.target.value)} placeholder="อย่างน้อย 8 ตัวอักษร" />
+                                    </Field>
+                                )}
                             </div>
                         </section>
 
@@ -153,6 +219,7 @@ export default function UserFormClient({ userId }) {
                                                     key={key}
                                                     type="button"
                                                     aria-pressed={selected}
+                                                    disabled={!isEdit}
                                                     onClick={() => set("status", key)}
                                                     className={`rounded-full border px-3 py-1.5 text-xs font-medium ${
                                                         selected ? "border-green-400 bg-green-50 text-green-700" : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
@@ -171,11 +238,13 @@ export default function UserFormClient({ userId }) {
                                 <p className="mt-0.5 text-sm text-orange-700">
                                     {isEdit
                                         ? "การเปลี่ยนอีเมลหรือบทบาทจะมีผลกับสิทธิ์การเข้าใช้งานทันที กรุณาตรวจสอบก่อนบันทึก"
-                                        : "เมื่อกดปุ่ม “สร้างบัญชีใหม่” ระบบจะทำการส่งรหัสผ่านชั่วคราวไปยังอีเมลของผู้ใช้งาน กรุณาตรวจสอบความถูกต้องของอีเมลให้แน่ใจก่อนดำเนินการ"}
+                                        : "บัญชีจะถูกสร้างใน Supabase Auth พร้อม profile ตามบทบาทและสถานะที่เลือก กรุณาแจ้งรหัสผ่านเริ่มต้นให้ผู้ใช้งานอย่างปลอดภัย"}
                                 </p>
                             </div>
                         </section>
                     </div>
+
+                    {submitError && <p className="px-6 pt-4 text-sm text-red-600">{submitError}</p>}
 
                     <div className="flex items-center justify-end gap-4 border-t border-gray-200 bg-gray-50/50 p-6">
                         <Button variant="outline" href="/Admin/users" className="text-sm text-gray-500 hover:text-gray-800">ยกเลิกการแก้ไข</Button>
