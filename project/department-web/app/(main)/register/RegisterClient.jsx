@@ -2,9 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createClient } from "@lib/supabase/client";
 import { AuthShell, BluePanel, Field, PasswordField, SubmitButton, Icon } from "@components/AuthShell";
 
 export default function RegisterClient() {
+  const router = useRouter();
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -15,16 +18,75 @@ export default function RegisterClient() {
   const [accepted, setAccepted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const update = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
   async function handleSubmit(e) {
     e.preventDefault();
     if (!accepted) return;
+
+    const firstName = form.firstName.trim();
+    const lastName = form.lastName.trim();
+    const studentId = form.studentId.trim();
+    const email = form.email.trim().toLowerCase();
+
+    if (!/^\d{8}$|^\d{10}$/.test(studentId)) {
+      setError("รหัสนักศึกษาต้องเป็นตัวเลข 8 หรือ 10 หลัก");
+      return;
+    }
+    if (form.password.length < 8) {
+      setError("รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร");
+      return;
+    }
+
     setLoading(true);
+    setError("");
+    setSuccess("");
     try {
-      // TODO: เรียก API สมัครสมาชิก เช่น await fetch("/api/auth/register", {...})
-      console.log(form);
+      const supabase = createClient();
+
+      // สร้าง user ใน Supabase Auth ข้อมูลใน options.data จะถูก trigger
+      // handle_new_user ใช้สร้างแถวใน public.profiles (role = student เสมอ)
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password: form.password,
+        options: {
+          data: { full_name: `${firstName} ${lastName}`, student_id: studentId },
+          emailRedirectTo: `${window.location.origin}/login`,
+        },
+      });
+
+      if (signUpError) {
+        if (/already registered|already exists/i.test(signUpError.message)) {
+          setError("อีเมลนี้ถูกใช้งานแล้ว");
+        } else if (/database error/i.test(signUpError.message)) {
+          setError("ไม่สามารถสร้างบัญชีได้ รหัสนักศึกษานี้อาจถูกใช้งานแล้ว");
+        } else {
+          setError(signUpError.message);
+        }
+        return;
+      }
+
+      // เปิด Confirm email ไว้: อีเมลที่มีบัญชีอยู่แล้วจะไม่ error แต่ identities ว่าง
+      if (data.user && data.user.identities?.length === 0) {
+        setError("อีเมลนี้ถูกใช้งานแล้ว");
+        return;
+      }
+
+      if (data.session) {
+        // ปิด Confirm email: ล็อกอินให้อัตโนมัติ
+        router.push("/");
+        router.refresh();
+      } else {
+        // เปิด Confirm email: ต้องกดลิงก์ในอีเมลก่อน
+        setSuccess("สมัครสมาชิกสำเร็จ กรุณาตรวจสอบอีเมลและกดลิงก์ยืนยันก่อนเข้าสู่ระบบ");
+        setForm({ firstName: "", lastName: "", studentId: "", email: "", password: "" });
+        setAccepted(false);
+      }
+    } catch (err) {
+      setError(err?.message || "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
     } finally {
       setLoading(false);
     }
@@ -43,14 +105,6 @@ export default function RegisterClient() {
           ]}
           footer={<span>© 2026 Computer Science Department</span>}
         >
-          {/* วางรูปที่ public/images/register-student.jpg (ถ้าไม่มีรูปจะซ่อนอัตโนมัติ) */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/images/register-student.jpg"
-            alt=""
-            onError={(e) => (e.currentTarget.style.display = "none")}
-            className="mx-auto mt-2 aspect-[4/3] w-4/5 rounded-md object-cover"
-          />
         </BluePanel>
       }
     >
@@ -58,6 +112,17 @@ export default function RegisterClient() {
       <p className="mt-1 text-sm text-gray-500">กรุณากรอกข้อมูลให้ครบถ้วนเพื่อสร้างบัญชีผู้ใช้งาน</p>
 
       <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
+        {error && (
+          <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+            {error}
+          </p>
+        )}
+        {success && (
+          <p role="status" className="rounded-lg bg-green-50 p-3 text-sm text-green-700">
+            {success}
+          </p>
+        )}
+
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
             label="ชื่อ"
@@ -127,7 +192,7 @@ export default function RegisterClient() {
         </label>
 
         <div className="mt-2">
-          <SubmitButton disabled={loading || !accepted}>สมัครสมาชิก</SubmitButton>
+          <SubmitButton disabled={loading || !accepted}>{loading ? "กำลังสมัครสมาชิก..." : "สมัครสมาชิก"}</SubmitButton>
         </div>
 
         <p className="text-center text-sm text-gray-500">

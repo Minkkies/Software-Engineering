@@ -186,6 +186,9 @@ export default function UserFormClient({ userId }) {
                                 <Field label="อีเมลมหาวิทยาลัย" error={errors.email}>
                                     <input type="email" className={`${INPUT} ${errors.email ? "border-red-400" : "border-gray-200"}`} value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="username@university.ac.th" />
                                 </Field>
+                                <Field label={form.role === "student" ? "รหัสนักศึกษา" : "รหัสประจำตัว (ถ้ามี)"} error={errors.studentId}>
+                                    <input inputMode="numeric" className={`${INPUT} ${errors.studentId ? "border-red-400" : "border-gray-200"}`} value={form.studentId} onChange={(e) => set("studentId", e.target.value.trim())} placeholder="ตัวเลข 8 หรือ 10 หลัก" />
+                                </Field>
                                 {!isEdit && (
                                     <Field label="รหัสผ่านเริ่มต้น" error={errors.password}>
                                         <input type="password" minLength={8} autoComplete="new-password" className={`${INPUT} ${errors.password ? "border-red-400" : "border-gray-200"}`} value={form.password} onChange={(e) => set("password", e.target.value)} placeholder="อย่างน้อย 8 ตัวอักษร" />
