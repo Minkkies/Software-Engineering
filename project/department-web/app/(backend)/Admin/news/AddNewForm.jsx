@@ -112,7 +112,7 @@ function Toggle({ label, checked, onChange }) {
   );
 }
 
-function DocRow({ name, size, onRemove, disabled, badge }) {
+function DocRow({ name, size, url, onRemove, disabled, badge }) {
   const ext = extOf(name);
   return (
     <li className="flex items-center gap-3 px-3 py-2.5">
@@ -134,6 +134,16 @@ function DocRow({ name, size, onRemove, disabled, badge }) {
         </p>
         <p className="text-xs text-gray-500">{formatSize(size)}</p>
       </div>
+      {url && (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 text-xs font-medium text-[#0033A0] hover:underline"
+        >
+          ดูไฟล์
+        </a>
+      )}
       <Button
         variant="ghost"
         size="sm"
@@ -506,6 +516,7 @@ export default function AddNewForm({ initial = null, categories = CATEGORIES, on
                       key={`old-${d.name}`}
                       name={d.name}
                       size={d.size}
+                      url={d.url}
                       badge="ไฟล์เดิม"
                       disabled={saving}
                       onRemove={() => setOldDocs(oldDocs.filter((x) => x.name !== d.name))}

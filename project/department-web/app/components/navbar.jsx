@@ -8,6 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import Icon from "./IconComponent";
 import Button from "./button";
+import { createClient } from "@lib/supabase/client";
 
 // ชื่อโฟลเดอร์ใน app/(main)/ => URL (route group ไม่ปรากฏใน URL)
 export const NAV_LINKS = [
@@ -38,6 +39,18 @@ export default function Navbar({ user = null, onLogout }) {
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [query, setQuery] = useState("");
+
+  const handleLogout = async () => {
+    if (onLogout) {
+      await onLogout();
+    } else {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signOut();
+      if (error) return;
+    }
+    router.push("/home");
+    router.refresh();
+  };
 
   const submitSearch = (e) => {
     e.preventDefault();
@@ -116,19 +129,12 @@ export default function Navbar({ user = null, onLogout }) {
                     <Icon name="user" size={16} />
                   </span>
                 )}
-                <span className="hidden text-xs font-semibold text-[#1a1a1a] sm:block">
-                  {user.name}
+                <span className="hidden max-w-48 text-xs text-[#1a1a1a] sm:block">
+                  <span className="block truncate font-semibold">{user.name}</span>
+                  {user.email && <span className="block truncate text-[10px] text-gray-500">{user.email}</span>}
                 </span>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                icon="logout"
-                onClick={onLogout}
-                className="hidden sm:inline-flex"
-              >
-                ออกจากระบบ
-              </Button>
+             
             </div>
           ) : (
             <Button href={LOGIN_HREF} size="sm" icon="user">
@@ -191,7 +197,7 @@ export default function Navbar({ user = null, onLogout }) {
               size="sm"
               icon="logout"
               fullWidth
-              onClick={onLogout}
+              onClick={handleLogout}
               className="mt-3"
             >
               ออกจากระบบ

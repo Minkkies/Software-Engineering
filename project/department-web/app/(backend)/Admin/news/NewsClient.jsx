@@ -63,6 +63,7 @@ export default function NewsClient({ initialNews = [], initialCategories = [], r
   const [catOpen, setCatOpen] = useState(false);
   const [catName, setCatName] = useState("");
   const [catError, setCatError] = useState("");
+  const [deletingCategory, setDeletingCategory] = useState(null);
 
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
@@ -200,6 +201,18 @@ export default function NewsClient({ initialNews = [], initialCategories = [], r
       setToast(`เพิ่มหมวดหมู่ "${saved.name}" แล้ว`);
     } catch (err) {
       setCatError(err.message);
+    }
+  };
+
+  const deleteCategory = async (name) => {
+    try {
+      await callApi("/api/news/categories", "DELETE", { name });
+      setCategories((list) => list.filter((categoryName) => categoryName !== name));
+      if (category === name) setCategory("all");
+      setToast(`ลบหมวดหมู่ "${name}" แล้ว`);
+      setDeletingCategory(null);
+    } catch (err) {
+      setCatError(`ลบไม่สำเร็จ: ${err.message}`);
     }
   };
 
@@ -534,12 +547,22 @@ export default function NewsClient({ initialNews = [], initialCategories = [], r
                   {categories.map((c) => (
                     <span
                       key={c}
-                      className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700"
+                      className="inline-flex items-center gap-1 rounded-full bg-gray-100 py-1 pl-2.5 pr-1 text-xs font-medium text-gray-700"
                     >
-                      {c}{" "}
-                      <span className="text-gray-400">
+                      <span>
+                        {c}{" "}
+                        <span className="text-gray-400">
                         · {news.filter((n) => n.category === c).length}
+                        </span>
                       </span>
+                      <button
+                        type="button"
+                        className="rounded-full p-1 text-gray-400 hover:bg-red-100 hover:text-red-600"
+                        aria-label={`ลบหมวดหมู่ ${c}`}
+                        onClick={() => setDeletingCategory(c)}
+                      >
+                        <Icon name="trash" size={13} />
+                      </button>
                     </span>
                   ))}
                 </div>
@@ -555,6 +578,37 @@ export default function NewsClient({ initialNews = [], initialCategories = [], r
               </Button>
             </div>
           </form>
+        </div>
+      )}
+
+      {deletingCategory && (
+        <div
+          className="fixed bottom-0 left-0 right-0 top-16 z-40 flex items-center justify-center bg-black/50 p-4 lg:left-64"
+          onMouseDown={(e) => e.target === e.currentTarget && setDeletingCategory(null)}
+        >
+          <div role="alertdialog" aria-modal="true" className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
+              <Icon name="alert" size={24} />
+            </div>
+            <h2 className="text-center text-lg font-bold text-[#1a1a1a]">ยืนยันการลบหมวดหมู่?</h2>
+            <p className="mt-2 text-center text-sm text-gray-500">
+              หากลบหมวดหมู่นี้ ข่าวที่อยู่ในหมวดหมู่จะไม่มีหมวดหมู่
+            </p>
+            <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3 text-center">
+              <p className="text-sm font-semibold text-[#1a1a1a]">{deletingCategory}</p>
+              <p className="mt-1 text-xs text-gray-500">
+                ข่าวที่ได้รับผลกระทบ {news.filter((n) => n.category === deletingCategory).length} รายการ
+              </p>
+            </div>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <Button variant="outline" onClick={() => setDeletingCategory(null)}>
+                ยกเลิก
+              </Button>
+              <Button variant="danger" icon="trash" onClick={() => deleteCategory(deletingCategory)}>
+                ยืนยันการลบ
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
