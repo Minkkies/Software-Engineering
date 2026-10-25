@@ -64,7 +64,14 @@ export default function LoginClient() {
       }
 
       // 3) พาไปหน้าตาม role แล้ว refresh เพื่อให้ Server Component อ่าน session ใหม่
-      router.push(profile.role === "admin" ? "/Admin/users" : "/");
+      router.push(
+        profile.role === "admin" ||
+          profile.role === "staff" ||
+          profile.role === "teacher"
+          ? "/Admin"
+          : "/"
+      );
+
       router.refresh();
     } catch (err) {
       setError(err?.message || "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");

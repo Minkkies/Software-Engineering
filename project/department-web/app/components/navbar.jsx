@@ -1,7 +1,7 @@
 "use client";
 // components/navbar.jsx
 // Navbar หน้าเว็บสาธารณะ (กลุ่ม (main)) ตามแบบ Visily
-// ใช้ใน app/(main)/layout.jsx:  <Navbar />  หรือเมื่อล็อกอินแล้ว  <Navbar user={{ name, avatar }} onLogout={...} />
+// ใช้ใน app/(main)/layout.jsx:  <Navbar />  หรือเมื่อล็อกอินแล้ว  <Navbar user={{ name }} onLogout={...} />
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -18,7 +18,6 @@ export const NAV_LINKS = [
   { label: "ตารางเรียน", href: "/schedule" },
   { label: "คณาจารย์", href: "/FacultyDirectory" },
   { label: "ปฏิทิน", href: "/calender" },
-  //////////////////////////// ทำเงื่อนไขให้เห็นเฉพาะผู้ดูแลระบบ (admin) เท่านั้น ////////////////////////////
   { label: "เจ้าหน้าที่", href: "/Admin" }
 ];
 
@@ -30,7 +29,7 @@ function isActive(pathname, href) {
 
 /**
  * @param {{
- *   user?: {name: string, avatar?: string} | null,
+ *   user?: {name: string, email?: string, role?: string} | null,
  *   onLogout?: () => void
  * }} props
  */
@@ -39,6 +38,10 @@ export default function Navbar({ user = null, onLogout }) {
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [profileOpen, setProfileOpen] = useState(false);
+  const visibleNavLinks = NAV_LINKS.filter(
+    (link) => link.href !== "/Admin" || user?.role !== "student"
+  );
 
   const handleLogout = async () => {
     if (onLogout) {
@@ -78,7 +81,7 @@ export default function Navbar({ user = null, onLogout }) {
 
         {/* เมนูหลัก (desktop) */}
         <nav className="hidden items-center gap-1 xl:flex">
-          {NAV_LINKS.map((link) => {
+          {visibleNavLinks.map((link) => {
             const active = isActive(pathname, link.href);
             return (
               <Link
@@ -115,26 +118,39 @@ export default function Navbar({ user = null, onLogout }) {
 
           {/* ผู้ใช้ / ปุ่มเข้าสู่ระบบ */}
           {user ? (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white py-1 pl-1 pr-3">
-                {user.avatar ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={user.avatar}
-                    alt=""
-                    className="h-7 w-7 rounded-full object-cover"
-                  />
-                ) : (
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0033A0]/10 text-[#0033A0]">
-                    <Icon name="user" size={16} />
-                  </span>
-                )}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setProfileOpen((v) => !v)}
+                aria-expanded={profileOpen}
+                aria-haspopup="menu"
+                className="flex items-center gap-2 rounded-full border border-gray-200 bg-white py-1 pl-1 pr-3"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0033A0]/10 text-sm font-semibold text-[#0033A0]">
+                  {user.name?.trim().split(/\s+/)[0]?.slice(0, 1) || "?"}
+                </span>
                 <span className="hidden max-w-48 text-xs text-[#1a1a1a] sm:block">
-                  <span className="block truncate font-semibold">{user.name}</span>
+                  <span className="block truncate font-semibold text-left">{user.name}</span>
                   {user.email && <span className="block truncate text-[10px] text-gray-500">{user.email}</span>}
                 </span>
-              </div>
-             
+                <Icon name="chevronDown" size={14} className="hidden text-gray-500 sm:block" />
+              </button>
+              {profileOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-full z-10 mt-2 w-44 rounded-lg border border-gray-200 bg-white p-1 shadow-lg"
+                >
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                  >
+                    <Icon name="logout" size={16} />
+                    ออกจากระบบ
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <Button href={LOGIN_HREF} size="sm" icon="user">
@@ -173,7 +189,7 @@ export default function Navbar({ user = null, onLogout }) {
             />
           </form>
           <nav className="grid grid-cols-2 gap-1">
-            {NAV_LINKS.map((link) => {
+            {visibleNavLinks.map((link) => {
               const active = isActive(pathname, link.href);
               return (
                 <Link
@@ -191,18 +207,6 @@ export default function Navbar({ user = null, onLogout }) {
               );
             })}
           </nav>
-          {user && (
-            <Button
-              variant="outline"
-              size="sm"
-              icon="logout"
-              fullWidth
-              onClick={handleLogout}
-              className="mt-3"
-            >
-              ออกจากระบบ
-            </Button>
-          )}
         </div>
       )}
     </header>
