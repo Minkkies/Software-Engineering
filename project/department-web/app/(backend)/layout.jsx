@@ -20,7 +20,7 @@ export default async function BackendLayout({ children }) {
         <Sidebar />
         <main className="ml-64 min-w-0 flex-1">
           {children}
-          <InfoCards className="px-8 py-4" />
+          <InfoCards className="px-6 pb-6" />
         </main>
       </div>
     </div>

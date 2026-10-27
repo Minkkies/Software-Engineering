@@ -147,7 +147,7 @@ export default function UsersClient() {
     const stats = useMemo(
         () => ({
             total: users.length,
-            staff: users.filter((u) => u.role === "staff" || u.role === "admin").length,
+            staff: users.filter((u) => u.role === "staff" || u.role === "teacher").length,
             students: users.filter((u) => u.role === "student" && u.status === "active").length,
         }),
         [users]
@@ -198,11 +198,11 @@ export default function UsersClient() {
     ];
 
     return (
-        <div className="min-h-[calc(100vh-4rem)] bg-[#F5F6F8] p-4 sm:p-8">
+        <div className="w-full space-y-6 p-6">
             {/* หัวหน้า */}
             <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-[#1a1a1a]">จัดการผู้ใช้งาน</h1>
+                    <h1 className="text-2xl font-bold text-[#1a1a1a]">จัดการผู้ใช้งาน</h1>
                     <p className="mt-1 text-sm text-gray-500">จัดการบัญชีรายชื่ออาจารย์ บุคลากร และนักศึกษาในระบบสารสนเทศ</p>
                 </div>
                 <div className="flex gap-3">

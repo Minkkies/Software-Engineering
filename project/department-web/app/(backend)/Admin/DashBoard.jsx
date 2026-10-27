@@ -1,44 +1,18 @@
 "use client";
 // app/(backend)/Admin/DashBoard.jsx  (เรียกใช้จาก Admin/page.js)
 // หน้าภาพรวมระบบ (Dashboard) ตามแบบ Visily: การ์ดสถิติ, กราฟแนวโน้ม, Quick Actions,
-// รายชื่อบุคลากร, ตารางข่าวล่าสุด  (ข้อมูลด้านล่างเป็นตัวอย่าง ให้แทนด้วยข้อมูลจริงจาก API)
+// รายชื่อบุคลากร และตารางข่าวล่าสุด
 
 import Link from "next/link";
 import Button from "@components/button";
 import Icon from "@components/IconComponent";
 import { ADMIN_BASE } from "@components/sidebar";
-
-// ---------- ข้อมูลตัวอย่าง ----------
-const STATS = [
-  { label: "จำนวนนักศึกษาทั้งหมด", value: "1,248", trend: 12.5, icon: "users", bar: false },
-  { label: "ข่าวสารที่เผยแพร่", value: "84", trend: 3.2, icon: "news", bar: true },
-  { label: "หลักสูตรที่เปิดสอน", value: "12", trend: 0, icon: "book", bar: false },
-  { label: "กิจกรรมในเดือนนี้", value: "28", trend: -4.1, icon: "calendar", bar: true },
-];
-
-const MONTHS = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย."];
-const VISITORS = [42, 50, 56, 52, 68, 82]; // ผู้เข้าชมระบบ
-const CONTENT = [24, 22, 30, 28, 34, 40]; // การเข้าถึงเนื้อหา
+import { downloadCsv } from "@components/DataTable";
 
 const QUICK_ACTIONS = [
   { label: "เขียนข่าวใหม่", sub: "เผยแพร่สู่เว็บไซต์", icon: "plus", href: "/Admin/news" },
   { label: "เพิ่มกิจกรรม", sub: "ปฏิทินวิชาการ", icon: "calendar", href: "/Admin/calender" },
-  { label: "จัดการคณาจารย์", sub: "อัปเดตประวัติ", icon: "users", href: "/Admin/staff-teacher" },
-  { label: "แจ้งเตือนรวม", sub: "ส่งถึงนักศึกษา", icon: "bell", href: "#" }, // เปลี่ยนเมื่อมีหน้าแจ้งเตือน
-];
-
-const STAFF = [
-  { name: "ศ.ดร.สมชาย ใจดี", role: "หัวหน้าภาควิชา", status: "online" },
-  { name: "ผศ.รัตนากรณ์ แก้วนณี", role: "รองหัวหน้าภาควิชา", status: "away" },
-  { name: "ดร.วิชัย มั่นคง", role: "อาจารย์ประจำ", status: "online" },
-];
-
-const NEWS = [
-  { id: "CS-1", title: "ประกาศรับสมัครนักศึกษาใหม่ ปีการศึกษา 2567", author: "ศ.ดร.สมชาย ใจดี", date: "24 พ.ค. 2567", status: "published", views: 1240 },
-  { id: "CS-2", title: "กิจกรรมค่ายคอมพิวเตอร์เพื่อเยาวชน ครั้งที่ 15", author: "ผศ.หญิง รัตนากรณ์", date: "22 พ.ค. 2567", status: "draft", views: 0 },
-  { id: "CS-3", title: "ผลการแข่งขันเขียนโปรแกรมระดับประเทศ ACM-ICPC", author: "ดร.วิชัย นามสกุลดี", date: "20 พ.ค. 2567", status: "published", views: 850 },
-  { id: "CS-4", title: "สัมมนาเทคโนโลยี AI และอนาคตของแรงงานไทย", author: "Admin", date: "18 พ.ค. 2567", status: "archived", views: 2100 },
-  { id: "CS-5", title: "ตารางสอบปลายภาค ภาคเรียนที่ 2/2566", author: "ฝ่ายทะเบียน", date: "15 พ.ค. 2567", status: "published", views: 5420 },
+  { label: "จัดการคณาจารย์", sub: "อัปเดตประวัติ", icon: "users", href: "/Admin/staff-teacher" }
 ];
 
 const NEWS_STATUS = {
@@ -47,7 +21,20 @@ const NEWS_STATUS = {
   archived: { label: "จัดเก็บแล้ว", cls: "bg-gray-100 text-gray-600", icon: "file" },
 };
 
-const STAFF_DOT = { online: "bg-green-500", away: "bg-amber-400", offline: "bg-gray-300" };
+function TrendBadge({ value }) {
+  const up = value > 0;
+  return (
+    <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${
+      value === 0
+        ? "bg-gray-100 text-gray-500"
+        : up
+          ? "bg-green-50 text-green-700"
+          : "bg-red-50 text-red-600"
+    }`}>
+      {value === 0 ? "0% ไม่เปลี่ยนแปลง" : `${up ? "+" : ""}${value}%`}
+    </span>
+  );
+}
 
 // ---------- ตัวช่วยกราฟ ----------
 const CHART_W = 600;
@@ -94,38 +81,70 @@ function AreaSeries({ values, max, color, id }) {
         strokeLinecap="round"
         vectorEffect="non-scaling-stroke"
       />
+      {pts.map(([x, y], index) => (
+        <circle
+          key={`${id}-${index}`}
+          cx={x}
+          cy={y}
+          r="5"
+          fill="white"
+          stroke={color}
+          strokeWidth="2"
+          vectorEffect="non-scaling-stroke"
+        >
+          <title>{`${values[index].toLocaleString("en-US")} ครั้ง`}</title>
+        </circle>
+      ))}
     </>
-  );
-}
-
-function TrendBadge({ value }) {
-  if (value === 0)
-    return <span className="rounded-md bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-500">0%</span>;
-  const up = value > 0;
-  return (
-    <span
-      className={`rounded-md px-2 py-0.5 text-xs font-semibold ${
-        up ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"
-      }`}
-    >
-      {up ? "↗ +" : "↘ "}
-      {value}%
-    </span>
   );
 }
 
 const initials = (name) => name.replace(/^(ศ\.|รศ\.|ผศ\.|ดร\.)+/g, "").trim().charAt(0);
 
+function handleExport(stats, newsViews) {
+  downloadCsv(
+    "dashboard-statistics.csv",
+    ["ประเภทข้อมูล", "รายการ", "ค่า", "แนวโน้มเทียบเดือนก่อน", "เดือน"],
+    [
+      ...stats.map((item) => [
+        "สถิติ",
+        item.label,
+        item.value,
+        `${item.trend}%`,
+        "",
+      ]),
+      ...newsViews.map((item) => [
+        "ยอดเข้าชมข่าวสาร",
+        "จำนวนการเข้าชม",
+        item.views,
+        "",
+        `${item.label} ${item.year}`,
+      ]),
+    ],
+  );
+}
+
 // ---------- หน้า ----------
-export default function DashBoard() {
+export default function DashBoard({ latestNews = [], newsViews = [], stats, staff = [] }) {
   const today = new Date().toLocaleDateString("th-TH", {
     day: "numeric",
     month: "long",
     year: "numeric",
   });
+  const viewValues = newsViews.map((item) => item.views);
+  const chartMax = Math.max(1, ...viewValues);
+  const chartTicks = [1, 0.75, 0.5, 0.25, 0].map((ratio) => ({
+    value: Math.round(chartMax * ratio),
+    y: 16 + (1 - ratio) * (CHART_H - 24),
+  }));
+  const dashboardStats = [
+    { label: "จำนวนนักศึกษาทั้งหมด", value: stats?.students ?? 0, trend: stats?.trends?.students ?? 0, icon: "users" },
+    { label: "ข่าวสารที่เผยแพร่", value: stats?.publishedNews ?? 0, trend: stats?.trends?.publishedNews ?? 0, icon: "news" },
+    { label: "กิจกรรมในเดือนนี้", value: stats?.monthlyActivities ?? 0, trend: stats?.trends?.activities ?? 0, icon: "calendar" },
+  ];
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="w-full space-y-6 p-6">
       {/* หัวหน้า */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
@@ -134,23 +153,21 @@ export default function DashBoard() {
             ยินดีต้อนรับกลับมา, ผู้ดูแลระบบสารสนเทศ สาขาวิทยาการคอมพิวเตอร์
           </p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right">
-            <p className="text-[11px] text-gray-500">วันที่ปัจจุบัน</p>
-            <p className="text-sm font-medium text-[#1a1a1a]" suppressHydrationWarning>
-              {today}
-            </p>
-          </div>
-          <Button icon="plus">สร้างรายงานใหม่</Button>
-        </div>
+        <Button
+          variant="outline"
+          icon="download"
+          onClick={() => handleExport(dashboardStats, newsViews)}
+        >
+          ส่งออก CSV
+        </Button>
       </div>
 
       {/* การ์ดสถิติ */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {STATS.map((s) => (
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {dashboardStats.map((s) => (
           <div
             key={s.label}
-            className="relative overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+            className="relative overflow-hidden rounded-xl border border-gray-200 border-b-4 border-b-[#FFC72C] bg-white p-5 shadow-sm"
           >
             <div className="flex items-start justify-between">
               <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#0033A0]/10 text-[#0033A0]">
@@ -159,8 +176,9 @@ export default function DashBoard() {
               <TrendBadge value={s.trend} />
             </div>
             <p className="mt-4 text-sm text-gray-500">{s.label}</p>
-            <p className="mt-1 text-3xl font-bold text-[#1a1a1a]">{s.value}</p>
-            {s.bar && <span className="absolute inset-x-0 bottom-0 h-1 bg-[#FFC72C]" />}
+            <p className="mt-1 text-3xl font-bold text-[#1a1a1a]">
+              {s.value.toLocaleString("en-US")}
+            </p>
           </div>
         ))}
       </div>
@@ -170,78 +188,100 @@ export default function DashBoard() {
         <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm lg:col-span-2">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-bold text-[#1a1a1a]">แนวโน้มการเข้าใช้งานระบบ</h2>
+              <h2 className="text-lg font-bold text-[#1a1a1a]">ยอดเข้าชมข่าวสาร</h2>
               <p className="text-xs text-gray-500">
-                ข้อมูลเปรียบเทียบระหว่างผู้เข้าชมและการเข้าถึงเนื้อหา (6 เดือนล่าสุด)
+                จำนวนการเข้าชมข่าวสาร แยกตามเดือนที่สร้าง (6 เดือนล่าสุด)
               </p>
             </div>
             <span className="rounded-full bg-[#0033A0]/10 px-2.5 py-1 text-[11px] font-semibold text-[#0033A0]">
-              Real-time
+              จากฐานข้อมูล
             </span>
           </div>
 
           <div className="mt-6">
             <svg
-              viewBox={`0 0 ${CHART_W} ${CHART_H}`}
+              viewBox={`-50 0 ${CHART_W + 50} ${CHART_H}`}
               preserveAspectRatio="none"
               className="h-60 w-full"
               role="img"
-              aria-label="กราฟแนวโน้มการเข้าใช้งานระบบ 6 เดือนล่าสุด"
+              aria-label="กราฟยอดเข้าชมข่าวสาร 6 เดือนล่าสุด"
             >
-              {[0.25, 0.5, 0.75].map((r) => (
-                <line
-                  key={r}
-                  x1="0"
-                  x2={CHART_W}
-                  y1={CHART_H * r}
-                  y2={CHART_H * r}
-                  stroke="#e5e7eb"
-                  strokeDasharray="4 4"
-                  vectorEffect="non-scaling-stroke"
-                />
+              {chartTicks.map((tick, index) => (
+                <g key={index}>
+                  <text
+                    x="-8"
+                    y={tick.y + 4}
+                    textAnchor="end"
+                    fontSize="11"
+                    fill="#6b7280"
+                  >
+                    {tick.value.toLocaleString("en-US")}
+                  </text>
+                  <line
+                    x1="0"
+                    x2={CHART_W}
+                    y1={tick.y}
+                    y2={tick.y}
+                    stroke="#e5e7eb"
+                    strokeDasharray="4 4"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                </g>
               ))}
-              <AreaSeries values={CONTENT} max={100} color="#FFC72C" id="g-content" />
-              <AreaSeries values={VISITORS} max={100} color="#0033A0" id="g-visitors" />
+              <AreaSeries
+                values={viewValues}
+                max={chartMax}
+                color="#0033A0"
+                id="g-news-views"
+              />
             </svg>
             <div className="mt-2 flex justify-between text-xs text-gray-500">
-              {MONTHS.map((m) => (
-                <span key={m}>{m}</span>
+              {newsViews.map((item) => (
+                <span key={`${item.year}-${item.month}`}>{item.label}</span>
               ))}
             </div>
             <div className="mt-4 flex justify-center gap-5 text-xs text-gray-600">
               <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-sm bg-[#0033A0]" /> ผู้เข้าชมระบบ
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-sm bg-[#FFC72C]" /> การเข้าถึงเนื้อหา
+                <span className="h-2.5 w-2.5 rounded-sm bg-[#0033A0]" /> ยอดเข้าชมข่าวสาร
               </span>
             </div>
           </div>
         </section>
 
+        {/* Quick Actions */}
         <div className="space-y-6">
           <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-bold text-[#1a1a1a]">เข้าถึงด่วน (Quick Actions)</h2>
             <p className="text-xs text-gray-500">จัดการส่วนประกอบต่างๆ ของระบบได้ทันที</p>
             <div className="mt-4 grid grid-cols-2 gap-3">
-              {QUICK_ACTIONS.map((a) => (
+              {QUICK_ACTIONS.map((a, index) => (
                 <Link
                   key={a.label}
                   href={a.href}
-                  className="group rounded-lg border border-gray-200 bg-gray-50 p-3 transition-colors hover:border-[#0033A0]/40 hover:bg-[#0033A0]/5"
+                  className={`group rounded-lg border border-gray-200 bg-gray-50 p-3 transition-colors hover:border-[#0033A0]/40 hover:bg-[#0033A0]/5 ${index === QUICK_ACTIONS.length - 1 ? "col-span-2" : ""
+                    }`}
                 >
                   <Icon
                     name={a.icon}
                     size={20}
-                    className={a.icon === "calendar" || a.icon === "bell" ? "text-[#d99a00]" : "text-[#0033A0]"}
+                    className={
+                      a.icon === "calendar" || a.icon === "bell"
+                        ? "text-[#d99a00]"
+                        : "text-[#0033A0]"
+                    }
                   />
-                  <p className="mt-2 text-sm font-semibold text-[#1a1a1a]">{a.label}</p>
+
+                  <p className="mt-2 text-sm font-semibold text-[#1a1a1a]">
+                    {a.label}
+                  </p>
+
                   <p className="text-[11px] text-gray-500">{a.sub}</p>
                 </Link>
               ))}
             </div>
           </section>
 
+          {/* บุคลากร */}
           <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="flex items-start justify-between">
               <div>
@@ -256,14 +296,16 @@ export default function DashBoard() {
               </Link>
             </div>
             <ul className="mt-4 space-y-4">
-              {STAFF.map((p) => (
-                <li key={p.name} className="flex items-center gap-3">
+              {staff.map((p) => (
+                <li key={p.id} className="flex items-center gap-3">
                   <span className="relative">
                     <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0033A0]/10 text-sm font-bold text-[#0033A0]">
                       {initials(p.name)}
                     </span>
                     <span
-                      className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${STAFF_DOT[p.status]}`}
+                      className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
+                        p.active ? "bg-green-500" : "bg-gray-300"
+                      }`}
                     />
                   </span>
                   <div className="min-w-0 flex-1">
@@ -285,11 +327,8 @@ export default function DashBoard() {
             <p className="text-xs text-gray-500">รายการข่าวสารที่สร้างล่าสุดและสถานะการแสดงผล</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" href={`${ADMIN_BASE}/news`}>
+            <Button size="sm" href={`${ADMIN_BASE}/news`}>
               ดูรายงานละเอียด
-            </Button>
-            <Button variant="accent" size="sm" icon="plus" href={`${ADMIN_BASE}/news`}>
-              สร้างข่าวสาร
             </Button>
           </div>
         </div>
@@ -307,16 +346,22 @@ export default function DashBoard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {NEWS.map((n) => {
+              {latestNews.map((n) => {
                 const st = NEWS_STATUS[n.status];
                 return (
                   <tr key={n.id} className="hover:bg-gray-50/70">
                     <td className="px-6 py-3.5">
                       <p className="font-semibold text-[#1a1a1a]">{n.title}</p>
-                      <p className="text-[11px] text-gray-400">ID: #{n.id}</p>
+                      <p className="text-[11px] text-gray-400">ID: {n.id.slice(0, 8)}</p>
                     </td>
                     <td className="px-3 py-3.5 text-gray-600">{n.author}</td>
-                    <td className="px-3 py-3.5 text-gray-600">{n.date}</td>
+                    <td className="px-3 py-3.5 text-gray-600">
+                      {new Date(n.date).toLocaleDateString("th-TH", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </td>
                     <td className="px-3 py-3.5">
                       <span
                         className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${st.cls}`}
@@ -328,15 +373,6 @@ export default function DashBoard() {
                     <td className="px-3 py-3.5 text-right font-mono text-gray-700">
                       {n.views.toLocaleString("en-US")}
                     </td>
-                    <td className="px-6 py-3.5 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        icon="eye"
-                        href={`${ADMIN_BASE}/news`}
-                        aria-label={`ดูข่าว ${n.title}`}
-                      />
-                    </td>
                   </tr>
                 );
               })}
@@ -344,14 +380,6 @@ export default function DashBoard() {
           </table>
         </div>
       </section>
-
-      {/* ท้ายหน้า */}
-      <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-200 pt-4 text-xs text-gray-500">
-        <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-green-500" /> ระบบกำลังทำงานปกติ (System Operational)
-        </span>
-        <span>เอกสารการใช้งาน · ศูนย์ช่วยเหลือ</span>
-      </footer>
     </div>
   );
 }
