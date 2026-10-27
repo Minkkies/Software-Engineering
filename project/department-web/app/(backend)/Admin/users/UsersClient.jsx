@@ -219,9 +219,9 @@ export default function UsersClient() {
             {error && <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
-                <StatCard label="ผู้ใช้งานทั้งหมด" value={stats.total} note="ข้อมูลจาก Supabase" noteClass="text-green-600" />
-                <StatCard label="อาจารย์และบุคลากร" value={stats.staff} note="รวมทุกสาขาวิชา" />
-                <StatCard label="นักศึกษาปัจจุบัน" value={stats.students} note="Active Status" noteClass="text-green-600" />
+                <StatCard label="ผู้ใช้งานทั้งหมด" value={stats.total} note="ข้อมูลจาก Supabase"  />
+                <StatCard label="อาจารย์และบุคลากร" value={stats.staff} note="ไม่นับบัญแอดมิน" />
+                <StatCard label="นักศึกษาปัจจุบัน" value={stats.students} note="Active Status" />
             </div>
 
             {/* ตาราง */}
@@ -241,7 +241,7 @@ export default function UsersClient() {
                 />
             </div>
 
-            <InfoCards />
+            {/* <InfoCards /> */}
             <ConfirmDialog
                 open={Boolean(deleteTarget)}
                 title="ยืนยันการลบผู้ใช้งาน"

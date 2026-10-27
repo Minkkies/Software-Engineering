@@ -7,6 +7,7 @@ export default async function MainLayout({ children }) {
     ? {
         name: profile?.full_name || profile?.email || user.email || "ผู้ใช้งาน",
         email: profile?.email || user.email || "",
+        role: profile?.role,
       }
     : null;
 
