@@ -1,5 +1,6 @@
 import Sidebar from "@components/sidebar";
 import Navbar from "@components/navbar";
+import InfoCards from "@components/InfoCards";
 import { getSessionUser } from "@lib/supabase/auth";
 
 export default async function BackendLayout({ children }) {
@@ -8,6 +9,7 @@ export default async function BackendLayout({ children }) {
     ? {
         name: profile?.full_name || profile?.email || user.email || "ผู้ใช้งาน",
         email: profile?.email || user.email || "",
+        role: profile?.role,
       }
     : null;
 
@@ -16,7 +18,10 @@ export default async function BackendLayout({ children }) {
       <Navbar user={navbarUser} />
       <div className="min-h-[calc(100vh-4rem)]">
         <Sidebar />
-        <main className="ml-64 min-w-0 flex-1">{children}</main>
+        <main className="ml-64 min-w-0 flex-1">
+          {children}
+          <InfoCards className="px-8 py-4" />
+        </main>
       </div>
     </div>
   );
