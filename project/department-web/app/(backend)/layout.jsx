@@ -2,9 +2,18 @@ import Sidebar from "@components/sidebar";
 import Navbar from "@components/navbar";
 import InfoCards from "@components/InfoCards";
 import { getSessionUser } from "@lib/supabase/auth";
+import { redirect } from "next/navigation";
 
 export default async function BackendLayout({ children }) {
   const { user, profile } = await getSessionUser();
+  if (
+    !user ||
+    !profile?.is_active ||
+    !["admin", "staff", "teacher"].includes(profile.role)
+  ) {
+    redirect("/login");
+  }
+
   const navbarUser = user
     ? {
         name: profile?.full_name || profile?.email || user.email || "ผู้ใช้งาน",
