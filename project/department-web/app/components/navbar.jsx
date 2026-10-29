@@ -13,7 +13,7 @@ import { createClient } from "@lib/supabase/client";
 // ชื่อโฟลเดอร์ใน app/(main)/ => URL (route group ไม่ปรากฏใน URL)
 export const NAV_LINKS = [
   { label: "หน้าแรก", href: "/home" },
-  { label: "ข่าวสาร", href: "/news" }, // ต้องสร้าง app/(main)/news
+  { label: "ข่าวสาร", href: "/news" }, 
   { label: "รายวิชา", href: "/course" },
   { label: "ตารางเรียน", href: "/schedule" },
   { label: "คณาจารย์", href: "/FacultyDirectory" },
@@ -40,7 +40,9 @@ export default function Navbar({ user = null, onLogout }) {
   const [query, setQuery] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
   const visibleNavLinks = NAV_LINKS.filter(
-    (link) => link.href !== "/Admin" || (user && user.role !== "student")
+    (link) =>
+      (link.href !== "/schedule" || user) &&
+      (link.href !== "/Admin" || (user && user.role !== "student"))
   );
 
   const handleLogout = async () => {
