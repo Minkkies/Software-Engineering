@@ -289,69 +289,73 @@ export default function NewsClient({ news = [], categories = [] }) {
 
       <div className="mx-auto -mt-10 max-w-4xl px-4">
         {/* ---------- Toolbar ---------- */}
-        <div className="flex flex-col gap-3 rounded-xl bg-white p-3 shadow-md md:flex-row md:items-center">
-          <label className="relative md:w-60 md:shrink-0">
+        <div className="rounded-xl bg-white p-3 shadow-md">
+        {/* แถวที่ 1: ค้นหา + สลับมุมมอง */}
+        <div className="flex items-center gap-3">
+            <label className="relative min-w-0 flex-1">
             <span className="sr-only">ค้นหาข่าว</span>
             <Icon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400">
-              <circle cx="11" cy="11" r="7" />
-              <path d="m20 20-3.5-3.5" />
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" />
             </Icon>
             <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="ค้นหาข่าว..."
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="ค้นหาข่าว..."
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
             />
-          </label>
+            </label>
 
-          <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto md:justify-end">
+            <div className="flex shrink-0 items-center gap-1 border-l border-slate-200 pl-3">
             <button
-              type="button"
-              onClick={() => setActiveCat("all")}
-              className={chipClass(activeCat === "all")}
-            >
-              ทั้งหมด
-            </button>
-            {categories.map((c) => (
-              <button
-                key={c.id}
                 type="button"
-                onClick={() => setActiveCat(c.id)}
-                className={chipClass(activeCat === c.id)}
-              >
-                {c.name}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-1 self-end border-slate-200 md:border-l md:pl-3">
-            <button
-              type="button"
-              onClick={() => setView("grid")}
-              aria-label="แสดงแบบตาราง"
-              aria-pressed={view === "grid"}
-              className={toggleClass(view === "grid")}
+                onClick={() => setView("grid")}
+                aria-label="แสดงแบบตาราง"
+                aria-pressed={view === "grid"}
+                className={toggleClass(view === "grid")}
             >
-              <Icon>
+                <Icon>
                 <rect x="4" y="4" width="6" height="6" rx="1" />
                 <rect x="14" y="4" width="6" height="6" rx="1" />
                 <rect x="4" y="14" width="6" height="6" rx="1" />
                 <rect x="14" y="14" width="6" height="6" rx="1" />
-              </Icon>
+                </Icon>
             </button>
             <button
-              type="button"
-              onClick={() => setView("list")}
-              aria-label="แสดงแบบรายการ"
-              aria-pressed={view === "list"}
-              className={toggleClass(view === "list")}
+                type="button"
+                onClick={() => setView("list")}
+                aria-label="แสดงแบบรายการ"
+                aria-pressed={view === "list"}
+                className={toggleClass(view === "list")}
             >
-              <Icon>
+                <Icon>
                 <path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" />
-              </Icon>
+                </Icon>
             </button>
-          </div>
+            </div>
+        </div>
+
+        {/* แถวที่ 2: ตัวกรองหมวดหมู่ (ขึ้นบรรทัดใหม่อัตโนมัติถ้าไม่พอ) */}
+        <div className="mt-3 flex flex-wrap items-center gap-1">
+            <button
+            type="button"
+            onClick={() => setActiveCat("all")}
+            className={chipClass(activeCat === "all")}
+            >
+            ทั้งหมด
+            </button>
+            {categories.map((c) => (
+            <button
+                key={c.id}
+                type="button"
+                onClick={() => setActiveCat(c.id)}
+                className={chipClass(activeCat === c.id)}
+            >
+                {c.name}
+            </button>
+            ))}
+        </div>
         </div>
 
         {/* ---------- News ---------- */}
