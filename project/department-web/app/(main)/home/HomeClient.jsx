@@ -14,7 +14,7 @@ const HERO_SLIDES = [
   { src: "/images/home/home-img2.jpg", alt: "กิจกรรมของนักศึกษาสาขาวิทยาการคอมพิวเตอร์" },
   { src: "/images/home/home-img3.jpg", alt: "การเรียนการสอนในสาขาวิทยาการคอมพิวเตอร์" },
 ];
-const SLIDE_INTERVAL_MS = 3000;
+const SLIDE_INTERVAL_MS = 2000;
 
 const QUICK_LINKS = [
   {
