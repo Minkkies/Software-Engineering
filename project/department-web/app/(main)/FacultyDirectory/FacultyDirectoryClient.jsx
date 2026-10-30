@@ -228,6 +228,17 @@ export default function FacultyClient({ members = [] }) {
                     {popular.length > 0 && (
                         <div className="flex flex-wrap items-center gap-2 text-xs">
                             <span className="text-gray-500">ยอดนิยม:</span>
+                            <button
+                                type="button"
+                                onClick={() => setExpertise("")}
+                                className={`rounded-full border px-3 py-1 transition ${
+                                    expertise === ""
+                                        ? "border-[#0033a0] bg-[#0033a0] text-white"
+                                        : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                }`}
+                            >
+                                ทั้งหมด
+                            </button>
                             {popular.map((t) => {
                                 const active = expertise === t;
                                 return (
