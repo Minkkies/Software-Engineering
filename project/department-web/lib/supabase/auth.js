@@ -15,5 +15,23 @@ export async function getSessionUser() {
     .maybeSingle();
 
   if (error) throw new Error(error.message);
-  return { supabase, user, profile };
+
+  const { data: faculty, error: facultyError } = await supabase
+    .from("faculty_members")
+    .select("photo_url")
+    .eq("profile_id", user.id)
+    .maybeSingle();
+
+  if (facultyError) throw new Error(facultyError.message);
+
+  return {
+    supabase,
+    user,
+    profile,
+    profilePhotoUrl:
+      faculty?.photo_url ||
+      user.user_metadata?.avatar_url ||
+      user.user_metadata?.picture ||
+      "",
+  };
 }

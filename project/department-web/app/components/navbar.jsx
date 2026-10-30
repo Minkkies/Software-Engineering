@@ -29,7 +29,7 @@ function isActive(pathname, href) {
 
 /**
  * @param {{
- *   user?: {name: string, email?: string, role?: string} | null,
+ *   user?: {name: string, email?: string, role?: string, photoUrl?: string} | null,
  *   onLogout?: () => void
  * }} props
  */
@@ -128,9 +128,17 @@ export default function Navbar({ user = null, onLogout }) {
                 aria-haspopup="menu"
                 className="flex items-center gap-2 rounded-full border border-gray-200 bg-white py-1 pl-1 pr-3"
               >
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0033A0]/10 text-sm font-semibold text-[#0033A0]">
-                  {user.name?.trim().split(/\s+/)[0]?.slice(0, 1) || "?"}
-                </span>
+                {user.photoUrl ? (
+                  <img
+                    src={user.photoUrl}
+                    alt={`รูปโปรไฟล์ของ ${user.name || "ผู้ใช้งาน"}`}
+                    className="h-7 w-7 rounded-full object-cover"
+                  />
+                ) : (
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0033A0]/10 text-sm font-semibold text-[#0033A0]">
+                    {user.name?.trim().split(/\s+/)[0]?.slice(0, 1) || "?"}
+                  </span>
+                )}
                 <span className="hidden max-w-48 text-xs text-[#1a1a1a] sm:block">
                   <span className="block truncate font-semibold text-left">{user.name}</span>
                   {user.email && <span className="block truncate text-[10px] text-gray-500">{user.email}</span>}

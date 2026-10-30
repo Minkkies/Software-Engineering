@@ -5,7 +5,7 @@ import { getSessionUser } from "@lib/supabase/auth";
 import { redirect } from "next/navigation";
 
 export default async function BackendLayout({ children }) {
-  const { user, profile } = await getSessionUser();
+  const { user, profile, profilePhotoUrl } = await getSessionUser();
   if (
     !user ||
     !profile?.is_active ||
@@ -19,6 +19,7 @@ export default async function BackendLayout({ children }) {
         name: profile?.full_name || profile?.email || user.email || "ผู้ใช้งาน",
         email: profile?.email || user.email || "",
         role: profile?.role,
+        photoUrl: profilePhotoUrl,
       }
     : null;
 
