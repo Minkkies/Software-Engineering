@@ -31,6 +31,7 @@ async function createUser(request) {
   const email = String(body.email ?? "").trim().toLowerCase();
   const password = String(body.password ?? "");
   const studentId = String(body.studentId ?? "").trim();
+  const facultyId = String(body.facultyId ?? "").trim();
   const role = body.role;
   const isActive = body.status !== "suspended";
 
@@ -42,6 +43,17 @@ async function createUser(request) {
 
   const admin = createAdminClient();
   const fullName = `${firstName} ${lastName}`;
+  if (facultyId) {
+    const { data: faculty, error: facultyError } = await admin
+      .from("faculty_members")
+      .select("id, email, kind, profile_id")
+      .eq("id", facultyId)
+      .maybeSingle();
+    if (facultyError || !faculty) return NextResponse.json({ error: facultyError?.message || "ไม่พบข้อมูลบุคลากร" }, { status: 404 });
+    if (faculty.profile_id) return NextResponse.json({ error: "บุคลากรรายการนี้เชื่อมบัญชีแล้ว" }, { status: 409 });
+    if (faculty.email?.toLowerCase() !== email) return NextResponse.json({ error: "อีเมลต้องตรงกับข้อมูลบุคลากร" }, { status: 400 });
+    if (faculty.kind !== role) return NextResponse.json({ error: "บทบาทต้องตรงกับประเภทบุคลากร" }, { status: 400 });
+  }
 
   // 1) สร้าง user ใน Supabase Auth (ยืนยันอีเมลให้เลย เพราะ admin เป็นคนสร้าง)
   const { data: created, error: createError } = await admin.auth.admin.createUser({
@@ -79,7 +91,52 @@ async function createUser(request) {
     );
   }
 
+  if (facultyId) {
+    const { data: linkedFaculty, error: facultyError } = await admin
+      .from("faculty_members")
+      .update({ profile_id: created.user.id })
+      .eq("id", facultyId)
+      .is("profile_id", null)
+      .select("id")
+      .maybeSingle();
+    if (facultyError || !linkedFaculty) {
+      await admin.auth.admin.deleteUser(created.user.id);
+      return NextResponse.json({ error: facultyError?.message || "ไม่สามารถเชื่อมข้อมูลบุคลากรได้" }, { status: 400 });
+    }
+  }
+
   return NextResponse.json({ id: created.user.id }, { status: 201 });
+}
+
+async function linkFaculty(request) {
+  const { error: authError } = await requireAdmin();
+  if (authError) return authError;
+
+  const body = await request.json().catch(() => null);
+  const facultyId = String(body?.facultyId ?? "");
+  const profileId = String(body?.profileId ?? "");
+  if (!facultyId || !profileId) {
+    return NextResponse.json({ error: "ข้อมูลการเชื่อมบัญชีไม่ครบถ้วน" }, { status: 400 });
+  }
+
+  const admin = createAdminClient();
+  const [{ data: faculty, error: facultyError }, { data: profile, error: profileError }] =
+    await Promise.all([
+      admin.from("faculty_members").select("id, email, profile_id").eq("id", facultyId).maybeSingle(),
+      admin.from("profiles").select("id, email, role").eq("id", profileId).maybeSingle(),
+    ]);
+
+  if (facultyError || !faculty) return NextResponse.json({ error: facultyError?.message || "ไม่พบข้อมูลบุคลากร" }, { status: 404 });
+  if (profileError || !profile) return NextResponse.json({ error: profileError?.message || "ไม่พบโปรไฟล์ผู้ใช้งาน" }, { status: 404 });
+  if (faculty.profile_id) return NextResponse.json({ error: "บุคลากรรายการนี้เชื่อมบัญชีแล้ว" }, { status: 409 });
+  if (!["staff", "teacher"].includes(profile.role)) return NextResponse.json({ error: "บัญชีนี้ต้องมีบทบาทอาจารย์หรือเจ้าหน้าที่" }, { status: 400 });
+  if (!faculty.email || faculty.email.toLowerCase() !== (profile.email || "").toLowerCase()) {
+    return NextResponse.json({ error: "อีเมลของ faculty_members และ profile ไม่ตรงกัน" }, { status: 400 });
+  }
+
+  const { error } = await admin.from("faculty_members").update({ profile_id: profile.id }).eq("id", faculty.id).is("profile_id", null);
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  return NextResponse.json({ ok: true });
 }
 
 // ลบผู้ใช้ (UsersClient เรียกใช้): ลบจาก auth.users แล้ว profile ถูกลบตาม cascade
@@ -198,6 +255,9 @@ function withErrorHandling(handler) {
   };
 }
 
-export const POST = withErrorHandling(createUser);
+export const POST = withErrorHandling(async (request) => {
+  const body = await request.clone().json().catch(() => ({}));
+  return body.action === "linkFaculty" ? linkFaculty(request) : createUser(request);
+});
 export const DELETE = withErrorHandling(deleteUser);
 export const PATCH = withErrorHandling(updateUser);
