@@ -161,7 +161,7 @@ export default function UsersClient() {
     const stats = useMemo(
         () => ({
             total: users.length,
-            staff: users.filter((u) => u.role === "staff" || u.role === "teacher").length,
+            staff: users.filter((u) => u.role === "staff" || u.role === "teacher" || u.role === "admin").length,
             students: users.filter((u) => u.role === "student" && u.status === "active").length,
         }),
         [users]
@@ -272,7 +272,7 @@ export default function UsersClient() {
 
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
                 <StatCard label="ผู้ใช้งานทั้งหมด" value={stats.total} note="ข้อมูลจาก Supabase"  />
-                <StatCard label="อาจารย์และบุคลากร" value={stats.staff} note="ไม่นับบัญแอดมิน" />
+                <StatCard label="อาจารย์และบุคลากร" value={stats.staff} note="ทั้งหมดในระบบ" />
                 <StatCard label="นักศึกษาปัจจุบัน" value={stats.students} note="Active Status" />
             </div>
 
