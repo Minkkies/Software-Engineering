@@ -41,12 +41,3 @@ export async function getFacultyById(id) {
     }
     return data;
 }
-
-// "AI, Machine Learning" -> ["AI", "Machine Learning"]
-export function parseExpertise(text) {
-    if (!text) return [];
-    return text
-        .split(/[,;\n]/)
-        .map((s) => s.trim())
-        .filter(Boolean);
-}

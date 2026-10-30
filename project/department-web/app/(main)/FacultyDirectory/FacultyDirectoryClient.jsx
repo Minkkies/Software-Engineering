@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { parseExpertise } from "./faculty-data";
+import { parseExpertise, splitExpertise } from "./faculty-utils";
 
-const MAX_TAGS = 2;
+const MAX_TAGS = 3;
 
 function Icon({ d, className = "h-3.5 w-3.5" }) {
     return (
@@ -78,16 +78,20 @@ function FacultyCard({ member }) {
 
                 {tags.length > 0 && (
                     <div className="flex flex-wrap gap-1.5">
-                        {shown.map((t) => (
-                            <span
-                                key={t}
-                                className="rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-gray-700"
-                            >
-                                {t}
-                            </span>
-                        ))}
+                        {shown.map((t) => {
+                            const { code, name } = splitExpertise(t);
+                            return (
+                                <span
+                                    key={t}
+                                    title={t}
+                                    className="max-w-full truncate rounded-md bg-gray-100 px-2 py-1 text-[11px] font-semibold text-gray-700"
+                                >
+                                    {code || name}
+                                </span>
+                            );
+                        })}
                         {extra > 0 && (
-                            <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-semibold text-gray-700">
+                            <span className="rounded-md bg-gray-100 px-2 py-1 text-[11px] font-semibold text-gray-700">
                                 +{extra}
                             </span>
                         )}
@@ -230,6 +234,7 @@ export default function FacultyClient({ members = [] }) {
                                     <button
                                         key={t}
                                         type="button"
+                                        title={t}
                                         onClick={() => setExpertise(active ? "" : t)}
                                         className={`rounded-full border px-3 py-1 transition ${
                                             active
@@ -237,7 +242,7 @@ export default function FacultyClient({ members = [] }) {
                                                 : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                                         }`}
                                     >
-                                        {t}
+                                        {splitExpertise(t).code || t}
                                     </button>
                                 );
                             })}
