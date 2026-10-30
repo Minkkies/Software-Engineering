@@ -133,6 +133,15 @@ function FacultyCard({ member }) {
     );
 }
 
+// ลำดับความสำคัญของตำแหน่ง: ยิ่งน้อยยิ่งขึ้นก่อน
+function positionRank(member) {
+    const pos = (member.position ?? "").trim();
+    // ต้องเช็ก "รองหัวหน้า" ก่อน เพราะข้อความมีคำว่า "หัวหน้า" อยู่ข้างใน
+    if (pos.startsWith("รองหัวหน้า")) return 2;
+    if (pos.startsWith("หัวหน้าภาค")) return 1;
+    return 99;
+}
+
 export default function FacultyClient({ members = [] }) {
     const [kind, setKind] = useState("teacher");
     const [query, setQuery] = useState("");
@@ -169,6 +178,7 @@ export default function FacultyClient({ members = [] }) {
         else if (sort === "th-desc")
             list.sort((a, b) => b.full_name.localeCompare(a.full_name, "th"));
         // sort === "default" -> คงลำดับ sort_order จากฐานข้อมูล
+        list.sort((a, b) => positionRank(a) - positionRank(b));
         return list;
     }, [ofKind, query, expertise, sort]);
 
