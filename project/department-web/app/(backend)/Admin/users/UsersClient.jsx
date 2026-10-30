@@ -272,7 +272,7 @@ export default function UsersClient() {
 
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
                 <StatCard label="ผู้ใช้งานทั้งหมด" value={stats.total} note="ข้อมูลจาก Supabase"  />
-                <StatCard label="อาจารย์และบุคลากร" value={stats.staff} note="ทั้งหมดในระบบ" />
+                <StatCard label="อาจารย์และบุคลากร" value={stats.staff} note="จำนวนทั้งหมด" />
                 <StatCard label="นักศึกษาปัจจุบัน" value={stats.students} note="Active Status" />
             </div>
 
