@@ -322,7 +322,7 @@ export default function StaffTeacherClient() {
                                         <td className="px-5 py-4">
                                             <div className="flex items-center gap-3">
                                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-blue-50 text-sm font-bold text-blue-700">
-                                                    {person.photo_url ? <img src={person.photo_url} alt="" className="h-full w-full object-cover" /> : (person.full_name || "?").trim().charAt(0)}
+                                                    <img src={person.photo_url} alt={`รูปโปรไฟล์ของ ${person.full_name}`} className="h-full w-full object-cover" />
                                                 </div>
                                                 <div>
                                                     <p className="font-semibold text-slate-900">{person.full_name}</p>

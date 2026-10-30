@@ -99,8 +99,6 @@ function AreaSeries({ values, max, color, id }) {
   );
 }
 
-const initials = (name) => name.replace(/^(ศ\.|รศ\.|ผศ\.|ดร\.)+/g, "").trim().charAt(0);
-
 function handleExport(stats, newsViews) {
   downloadCsv(
     "dashboard-statistics.csv",
@@ -299,9 +297,11 @@ export default function DashBoard({ latestNews = [], newsViews = [], stats, staf
               {staff.map((p) => (
                 <li key={p.id} className="flex items-center gap-3">
                   <span className="relative">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0033A0]/10 text-sm font-bold text-[#0033A0]">
-                      {initials(p.name)}
-                    </span>
+                    <img
+                      src={p.photoUrl}
+                      alt={`รูปโปรไฟล์ของ ${p.name}`}
+                      className="h-10 w-10 rounded-full object-cover"
+                    />
                     <span
                       className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
                         p.active ? "bg-green-500" : "bg-gray-300"

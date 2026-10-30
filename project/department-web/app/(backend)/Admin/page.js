@@ -36,7 +36,7 @@ async function getLatestNews() {
     supabase.from("news").select("id", { count: "exact", head: true })
       .eq("status", "published").gte("publish_at", previousMonthStart).lt("publish_at", currentMonthStart),
     supabase.from("faculty_members")
-      .select("id, full_name, position, is_active")
+      .select("id, full_name, position, photo_url, is_active")
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false })
       .limit(3),
@@ -116,6 +116,7 @@ async function getLatestNews() {
       id: member.id,
       name: member.full_name,
       role: member.position || "บุคลากร",
+      photoUrl: member.photo_url,
       active: member.is_active,
     })),
     stats: {
