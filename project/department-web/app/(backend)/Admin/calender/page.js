@@ -1,36 +1,16 @@
 // app/(backend)/Admin/calender/page.js
-// Server Component — Auth/Role Check & Server-side Data Fetching
+// Server Component — Calendar Data Fetching
 
-import { redirect } from 'next/navigation';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
 import CalenderClient from './CalenderClient';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata = {
   title: 'Admin — Calendar Management | CS Info Portal',
   description: 'Manage academic calendar events for CS Info Portal',
 };
-
-async function getSessionAndRole(supabase) {
-  const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession();
-
-  if (sessionError || !session) return { session: null, profile: null };
-
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('id, role, full_name, email')
-    .eq('id', session.user.id)
-    .single();
-
-  if (profileError || !profile) return { session, profile: null };
-
-  return { session, profile };
-}
 
 async function fetchCalendarEvents(supabase) {
   const { data, error } = await supabase
@@ -46,34 +26,20 @@ async function fetchCalendarEvents(supabase) {
 }
 
 export default async function AdminCalenderPage() {
-  // 🟢 แก้ไขเรื่อง cookies() แบบ Callback ป้องกัน Next.js Async Cookies Warning/Error
-  const cookieStore = cookies();
-  const supabase = createServerComponentClient({ cookies: () => cookieStore });
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  const { session, profile } = await getSessionAndRole(supabase);
+  let events = [];
 
-  // 1. ตรวจสอบการ Login
-  if (!session) {
-    redirect('/login?next=/Admin/calender');
+  if (supabaseUrl && supabaseKey) {
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    events = await fetchCalendarEvents(supabase);
   }
-
-  // 2. Role guard — อนุญาตเฉพาะ admin หรือ superadmin
-  if (!profile || !['admin', 'superadmin'].includes(profile?.role)) {
-    redirect('/unauthorized');
-  }
-
-  // 3. ดึงข้อมูลปฏิทินส่งฝั่ง Client
-  const events = await fetchCalendarEvents(supabase);
 
   return (
     <CalenderClient
       initialEvents={events}
-      adminUser={{
-        id: session.user.id,
-        email: session.user.email,
-        fullName: profile?.full_name ?? session.user.email,
-        role: profile?.role,
-      }}
+      adminUser={null}
     />
   );
 }
