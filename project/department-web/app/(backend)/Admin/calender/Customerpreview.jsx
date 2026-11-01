@@ -1,8 +1,5 @@
-'use client';
-
 // components/CustomerPreview.jsx
-// Admin-side preview that mirrors app/(main)/calender exactly
-// — monthly calendar grid + event cards with category colour badges
+'use client';
 
 import { useState, useMemo } from 'react';
 import { getEventTypeConfig } from './CalenderClient';
@@ -21,6 +18,7 @@ function parseDate(str) {
 }
 
 function sameDay(a, b) {
+  if (!a || !b) return false;
   return a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate();
@@ -35,27 +33,26 @@ function formatDateRange(start, end) {
   if (!start) return '';
   const s = parseDate(start);
   const e = parseDate(end);
-  const fmt = (d) => d.toLocaleDateString('en-CA').slice(0, 10); // YYYY-MM-DD
+  const fmt = (d) => d.toLocaleDateString('en-CA').slice(0, 10);
   if (sameDay(s, e)) return fmt(s);
   return `${fmt(s)} - ${fmt(e)}`;
 }
 
-// ---------------------------------------------------------------------------
-export default function CustomerPreview({ events }) {
+export default function CustomerPreview({ events = [] }) {
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth()); // 0-indexed
+  const [month, setMonth] = useState(today.getMonth());
   const [selectedDate, setSelectedDate] = useState(null);
   const [expandedEvent, setExpandedEvent] = useState(null);
 
-  // Unique academic terms sorted
+  // Unique terms
   const terms = useMemo(
     () => [...new Set(events.map((e) => e.academic_term).filter(Boolean))].sort(),
     [events]
   );
-  const [selectedTerm, setSelectedTerm] = useState(terms[0] ?? '');
+  const [selectedTerm, setSelectedTerm] = useState(terms[0] ?? '2/2569');
 
-  // Events for selected term (or all)
+  // Filter events by term
   const termEvents = useMemo(() => {
     if (!selectedTerm) return events;
     return events.filter((e) => e.academic_term === selectedTerm);
@@ -63,7 +60,7 @@ export default function CustomerPreview({ events }) {
 
   // Build calendar grid
   const { days, prevPad, nextPad } = useMemo(() => {
-    const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+    const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     return { days: daysInMonth, prevPad: firstDay, nextPad: (7 - ((firstDay + daysInMonth) % 7)) % 7 };
   }, [year, month]);
@@ -86,115 +83,105 @@ export default function CustomerPreview({ events }) {
     });
   }
 
-  const selectedDayEvents = selectedDate ? eventsOnDay(selectedDate) : [];
-
-  // Events list sorted by start_date
-  const sortedEvents = useMemo(
-    () => [...termEvents].sort((a, b) => (a.start_date ?? '').localeCompare(b.start_date ?? '')),
-    [termEvents]
-  );
+  // Active events list (Filtered by selectedDate or all term events)
+  const activeEvents = useMemo(() => {
+    let list = termEvents;
+    if (selectedDate) {
+      list = eventsOnDay(selectedDate);
+    }
+    return [...list].sort((a, b) => (a.start_date ?? '').localeCompare(b.start_date ?? ''));
+  }, [termEvents, selectedDate]);
 
   return (
-    <div>
-      {/* Admin banner */}
-      <div className="mb-4 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-        <EyeIcon className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-        <p className="text-sm text-amber-700 dark:text-amber-400 font-medium">
-          ตัวอย่างหน้าที่นักศึกษาจะเห็น — ข้อมูลนี้ยังไม่ได้ถูกเผยแพร่จนกว่าคุณจะบันทึก
-        </p>
-      </div>
-
-      {/* Page Header (mirrors student page) */}
+    <div className="min-h-screen bg-slate-50/50 p-6 text-slate-800 font-sans">
+      
+      {/* 🟢 Header */}
       <div className="mb-6">
-        <div className="flex items-center gap-3 flex-wrap">
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-50">
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-slate-900">
             ระบบจัดการปฏิทินการศึกษา
           </h1>
           {selectedTerm && (
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-600 text-white">
+            <span className="rounded-full bg-blue-100 px-3 py-0.5 text-xs font-bold text-blue-700">
               ภาคการศึกษา {selectedTerm}
             </span>
           )}
         </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <p className="mt-1 text-sm font-medium text-slate-500">
           ตรวจสอบกำหนดการวิชาการ วันสอบ และกิจกรรมประจำปี
         </p>
-
-        {/* Term selector */}
-        {terms.length > 0 && (
-          <div className="flex gap-2 mt-3 flex-wrap">
-            <button
-              onClick={() => setSelectedTerm('')}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                !selectedTerm
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-              }`}
-            >
-              ทั้งหมด
-            </button>
-            {terms.map((t) => (
-              <button
-                key={t}
-                onClick={() => setSelectedTerm(t)}
-                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                  selectedTerm === t
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* ---- Left: Calendar ---- */}
-        <div>
-          {/* Calendar widget */}
-          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400">
-                <CalendarIcon className="w-5 h-5" />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* 🟢 Left Column: PDF Banner + Calendar Grid */}
+        <div className="lg:col-span-4 space-y-4">
+          
+          {/* Card 1: ประกาศ PDF */}
+          <div className="flex items-center justify-between rounded-2xl border border-red-200 bg-red-50/60 p-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 text-red-500">
+                <PdfIcon className="h-5 w-5" />
               </div>
               <div>
-                <p className="font-semibold text-gray-900 dark:text-gray-50 text-sm">CALENDAR (ปฏิทินการศึกษา)</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">ส่วนกลาง</p>
+                <p className="text-sm font-bold text-red-700">ประกาศปฏิทินฉบับเต็ม (PDF)</p>
+                <p className="text-xs font-medium text-red-400">อัปเดตล่าสุด: 25 ต.ค. 2569</p>
+              </div>
+            </div>
+            <button className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-white px-3 py-1.5 text-xs font-bold text-red-600 shadow-sm hover:bg-red-50">
+              <DownloadIcon className="h-4 w-4" />
+              ดาวน์โหลด
+            </button>
+          </div>
+
+          {/* Card 2: Calendar Widget */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            
+            {/* Title Header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+                  <CalendarIcon className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">CALENDAR (ปฏิทินการศึกษา)</h3>
+                  <p className="text-xs font-medium text-slate-400">ส่วนกลาง</p>
+                </div>
+              </div>
+
+              {/* Month Navigation */}
+              <div className="flex items-center gap-1 rounded-xl bg-slate-100 p-1">
+                <button onClick={prevMonth} className="p-1 rounded-lg hover:bg-white text-slate-600">
+                  <ChevronIcon direction="left" />
+                </button>
+                <span className="px-2 text-xs font-bold text-slate-700">
+                  {THAI_MONTHS[month]} {thaiYear(year)}
+                </span>
+                <button onClick={nextMonth} className="p-1 rounded-lg hover:bg-white text-slate-600">
+                  <ChevronIcon direction="right" />
+                </button>
               </div>
             </div>
 
-            {/* Month nav */}
-            <div className="flex items-center justify-between mb-4">
-              <button onClick={prevMonth} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 transition-colors">
-                <ChevronIcon direction="left" />
-              </button>
-              <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                {THAI_MONTHS[month]} {thaiYear(year)}
-              </span>
-              <button onClick={nextMonth} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 transition-colors">
-                <ChevronIcon direction="right" />
-              </button>
-            </div>
-
-            {/* Day headers */}
-            <div className="grid grid-cols-7 mb-1">
+            {/* Day Header Labels */}
+            <div className="grid grid-cols-7 mb-2 text-center text-xs font-bold">
               {DAY_LABELS.map((d) => (
-                <div key={d} className={`text-center text-xs font-medium py-1 ${d === 'Su' ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}`}>
+                <div key={d} className={d === 'Su' || d === 'Sa' ? 'text-blue-600' : 'text-slate-400'}>
                   {d}
                 </div>
               ))}
             </div>
 
-            {/* Day cells */}
-            <div className="grid grid-cols-7">
-              {/* Padding before */}
+            {/* Days Grid */}
+            <div className="grid grid-cols-7 gap-y-1">
+              {/* Padding Previous Month */}
               {Array.from({ length: prevPad }).map((_, i) => (
-                <div key={`p-${i}`} className="h-8" />
+                <div key={`p-${i}`} className="h-9 text-center text-xs text-slate-300 py-2">
+                  {new Date(year, month, -prevPad + i + 1).getDate()}
+                </div>
               ))}
 
-              {/* Days */}
+              {/* Current Month Days */}
               {Array.from({ length: days }).map((_, i) => {
                 const dayNum = i + 1;
                 const date = new Date(year, month, dayNum);
@@ -204,188 +191,165 @@ export default function CustomerPreview({ events }) {
                 const hasEvents = dayEvs.length > 0;
 
                 return (
-                  <button
-                    key={dayNum}
-                    onClick={() => setSelectedDate(isSelected ? null : date)}
-                    className={`relative h-8 w-full flex items-center justify-center text-sm rounded-full transition-colors mx-auto
-                      ${isSelected ? 'bg-indigo-600 text-white font-semibold' :
-                        isToday ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-semibold' :
-                        hasEvents ? 'hover:bg-gray-100 dark:hover:bg-gray-800 font-medium text-gray-900 dark:text-gray-100' :
-                        'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'}
+                  <div key={dayNum} className="flex flex-col items-center justify-center">
+                    <button
+                      onClick={() => setSelectedDate(isSelected ? null : date)}
+                      className={`relative flex h-9 w-9 items-center justify-center rounded-2xl text-xs transition-all
+                        ${isSelected 
+                          ? 'bg-amber-400 font-bold text-slate-900 shadow-sm ring-2 ring-amber-400/50' 
+                          : isToday 
+                            ? 'bg-amber-100 text-amber-800 font-bold' 
+                            : 'hover:bg-slate-100 text-slate-700 font-semibold'}
                       `}
-                  >
-                    {dayNum}
-                    {hasEvents && !isSelected && (
-                      <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 flex gap-0.5">
-                        {dayEvs.slice(0, 3).map((ev, idx) => {
-                          const cfg = getEventTypeConfig(ev.event_type);
-                          return (
-                            <span key={idx} className={`w-1 h-1 rounded-full ${cfg.color.split(' ')[0].replace('bg-', 'bg-').split('-')[0]+'-'+cfg.color.split(' ')[0].replace('bg-', '').split('-').slice(-1)[0]}`}
-                              style={{ backgroundColor: dotColor(ev.event_type) }}
-                            />
-                          );
-                        })}
-                      </span>
-                    )}
-                  </button>
+                    >
+                      {dayNum}
+                      {hasEvents && !isSelected && (
+                        <span className="absolute bottom-1 h-1 w-1 rounded-full bg-amber-500" />
+                      )}
+                    </button>
+                  </div>
                 );
               })}
 
-              {/* Padding after */}
+              {/* Padding Next Month */}
               {Array.from({ length: nextPad }).map((_, i) => (
-                <div key={`n-${i}`} className="h-8" />
+                <div key={`n-${i}`} className="h-9 text-center text-xs text-slate-300 py-2">
+                  {i + 1}
+                </div>
               ))}
             </div>
 
-            {/* Legend */}
-            <div className="flex items-center gap-4 mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
-              <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                <span className="w-2 h-2 rounded-full bg-orange-400" />
-                มีกำหนดการ
+            {/* Calendar Legend & Clear Filter */}
+            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-slate-500">
+              <div className="flex items-center gap-3">
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-amber-500" /> มีกำหนดการ
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-amber-300" /> วันนี้
+                </span>
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                <span className="w-2 h-2 rounded-full bg-indigo-400" />
-                วันนี้
-              </div>
+              {selectedDate && (
+                <button 
+                  onClick={() => setSelectedDate(null)}
+                  className="text-blue-600 hover:underline font-bold"
+                >
+                  ล้างการกรองวัน
+                </button>
+              )}
+            </div>
+
+          </div>
+        </div>
+
+        {/* 🟢 Right Column: Status Bar & Event Cards List */}
+        <div className="lg:col-span-8 space-y-4">
+          
+          {/* Header Status Filter Bar */}
+          <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-3.5 shadow-sm">
+            <div className="flex items-center gap-3">
+              <span className="h-3 w-3 rounded-full bg-amber-400" />
+              <h2 className="text-base font-bold text-slate-900">กำหนดการกิจกรรม</h2>
+              <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800">
+                {activeEvents.length} รายการ
+              </span>
+              
+              {/* 🟢 status วันที่เลือก */}
+              {selectedDate && (
+                <span className="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                  วันที่ {selectedDate.getDate()} {THAI_MONTHS[selectedDate.getMonth()]}
+                </span>
+              )}
             </div>
           </div>
 
-          {/* Selected day events */}
-          {selectedDate && selectedDayEvents.length > 0 && (
-            <div className="mt-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                กิจกรรมวันที่ {selectedDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })}
-              </p>
-              <div className="space-y-2">
-                {selectedDayEvents.map((ev) => (
-                  <MiniEventCard key={ev.id} event={ev} />
-                ))}
+          {/* Event Cards Stack */}
+          <div className="space-y-3">
+            {activeEvents.map((ev) => {
+              const cfg = getEventTypeConfig(ev.event_type);
+              return (
+                <div 
+                  key={ev.id}
+                  className="rounded-2xl border border-amber-200 bg-white p-5 shadow-xs transition-all hover:shadow-md"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-2 flex-1">
+                      
+                      {/* Event Date Range + Category Badge */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                          <ClockIcon className="h-4 w-4 text-blue-500" />
+                          {formatDateRange(ev.start_date, ev.end_date)}
+                        </span>
+                        
+                        <span className="rounded-lg bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800 flex items-center gap-1.5">
+                          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                          {cfg?.label || 'กำหนดการกิจกรรม'}
+                        </span>
+                      </div>
+
+                      {/* Event Title */}
+                      <h3 className="text-base font-bold text-slate-900 leading-snug">
+                        {ev.title}
+                      </h3>
+
+                      {/* Event Description */}
+                      <div className="pt-2 text-xs font-medium text-slate-400 flex items-center gap-1">
+                        <InfoIcon className="h-4 w-4" />
+                        <span>{ev.description || 'ตรวจสอบเงื่อนไขกับสำนักทะเบียน'}</span>
+                      </div>
+                    </div>
+
+                    {/* Term Badge & Details Button */}
+                    <div className="flex flex-col items-end justify-between gap-6">
+                      <span className="rounded-lg border border-amber-200 bg-amber-50/50 px-2.5 py-1 text-xs font-bold text-amber-800">
+                        ภาค {ev.academic_term || selectedTerm}
+                      </span>
+
+                      <button 
+                        onClick={() => setExpandedEvent(expandedEvent === ev.id ? null : ev.id)}
+                        className="flex items-center gap-1 rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-colors"
+                      >
+                        <EyeIcon className="h-3.5 w-3.5" />
+                        ดูรายละเอียด
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Expanded Description Area */}
+                  {expandedEvent === ev.id && ev.description && (
+                    <div className="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-600 leading-relaxed">
+                      {ev.description}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {activeEvents.length === 0 && (
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-white py-16 text-center">
+                <p className="text-sm font-semibold text-slate-400">
+                  ไม่พบกำหนดการกิจกรรมในวันที่เลือก
+                </p>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+
         </div>
 
-        {/* ---- Right: Event list ---- */}
-        <div>
-          {/* Group by type */}
-          {['registration', 'semester', 'exam', 'holiday', 'activity', 'academic'].map((type) => {
-            const typeEvents = sortedEvents.filter((e) => e.event_type === type);
-            if (typeEvents.length === 0) return null;
-            const cfg = getEventTypeConfig(type);
-            return (
-              <div key={type} className="mb-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className={`w-2.5 h-2.5 rounded-full`} style={{ backgroundColor: dotColor(type) }} />
-                  <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">{cfg.label}</h3>
-                  <span className="text-xs text-gray-400 dark:text-gray-500 font-normal bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-full">
-                    {typeEvents.length} รายการ
-                  </span>
-                </div>
-                <div className="space-y-3">
-                  {typeEvents.map((ev) => (
-                    <EventCard
-                      key={ev.id}
-                      event={ev}
-                      expanded={expandedEvent === ev.id}
-                      onToggle={() => setExpandedEvent(expandedEvent === ev.id ? null : ev.id)}
-                    />
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-
-          {sortedEvents.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 py-16 text-center">
-              <p className="text-gray-400 dark:text-gray-500 text-sm">ยังไม่มีกิจกรรมในภาคการศึกษานี้</p>
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Event Card (mirrors student view)
+// SVG Icons
 // ---------------------------------------------------------------------------
-function EventCard({ event, expanded, onToggle }) {
-  const cfg = getEventTypeConfig(event.event_type);
-  return (
-    <div
-      className="rounded-xl border border-l-4 bg-white dark:bg-gray-900 transition-shadow hover:shadow-sm"
-      style={{ borderLeftColor: dotColor(event.event_type) }}
-    >
-      <div className="px-4 py-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap mb-1">
-              <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                <ClockIcon className="w-3.5 h-3.5" />
-                {formatDateRange(event.start_date, event.end_date)}
-              </span>
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.color}`}>
-                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: dotColor(event.event_type) }} />
-                {cfg.label}
-              </span>
-            </div>
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-snug">{event.title}</p>
-          </div>
-          <span className={`flex-shrink-0 text-xs px-2 py-0.5 rounded-full border ${cfg.color} border-current/20`}>
-            {event.event_type}
-          </span>
-        </div>
-
-        {event.description && (
-          <button
-            onClick={onToggle}
-            className="mt-2 flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 hover:text-indigo-500 transition-colors"
-          >
-            <InfoIcon className="w-3.5 h-3.5" />
-            {expanded ? 'ซ่อนรายละเอียด' : 'ดูรายละเอียด'}
-          </button>
-        )}
-
-        {expanded && event.description && (
-          <p className="mt-2 text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-            {event.description}
-          </p>
-        )}
-      </div>
-    </div>
-  );
+function PdfIcon({ className }) {
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V7.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 1H7a2 2 0 00-2 2v16a2 2 0 002 2z" /></svg>;
 }
-
-function MiniEventCard({ event }) {
-  const cfg = getEventTypeConfig(event.event_type);
-  return (
-    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${cfg.color.split(' ').slice(0, 2).join(' ')}`}>
-      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: dotColor(event.event_type) }} />
-      <span className="text-xs font-medium truncate">{event.title}</span>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Colour helper
-// ---------------------------------------------------------------------------
-function dotColor(type) {
-  const map = {
-    semester: '#3b82f6',
-    exam: '#ef4444',
-    holiday: '#22c55e',
-    activity: '#eab308',
-    registration: '#f97316',
-    academic: '#a855f7',
-  };
-  return map[type] ?? '#6b7280';
-}
-
-// ---------------------------------------------------------------------------
-// Icons
-// ---------------------------------------------------------------------------
-function EyeIcon({ className }) {
-  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>;
+function DownloadIcon({ className }) {
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>;
 }
 function CalendarIcon({ className }) {
   return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>;
@@ -400,4 +364,7 @@ function ClockIcon({ className }) {
 }
 function InfoIcon({ className }) {
   return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4m0-4h.01" /></svg>;
+}
+function EyeIcon({ className }) {
+  return <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>;
 }
