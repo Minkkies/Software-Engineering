@@ -37,25 +37,25 @@ export default function BulkPreviewModal({ parsed, onSave, onClose, loading }) {
   return (
     <ModalOverlay onClose={onClose}>
       <div
-        className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-5xl mx-4 max-h-[92vh] flex flex-col text-slate-100"
+        className="bg-white border border-slate-200 rounded-2xl shadow-2xl w-full max-w-5xl mx-4 max-h-[92vh] flex flex-col text-slate-900"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
           <div>
-            <h2 className="font-semibold text-white text-base">ตรวจสอบข้อมูลก่อนบันทึก</h2>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <h2 className="font-semibold text-slate-900 text-base">ตรวจสอบข้อมูลก่อนบันทึก</h2>
+            <p className="text-xs text-slate-500 mt-0.5">
               พบ {rows.length} รายการ · พร้อมบันทึก {validCount} รายการ
               {hasErrors && <span className="text-red-400 font-medium ml-1">· มีข้อผิดพลาด {rows.length - validCount} รายการ</span>}
             </p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer">
+          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer">
             <XIcon />
           </button>
         </div>
 
         {/* Table */}
-        <div className="flex-1 overflow-auto px-6 py-4 bg-slate-950/40">
+        <div className="flex-1 overflow-auto px-6 py-4 bg-white">
           {rows.length === 0 ? (
             <div className="text-center py-12 text-slate-500">ไม่มีรายการที่จะบันทึก</div>
           ) : (
@@ -74,12 +74,12 @@ export default function BulkPreviewModal({ parsed, onSave, onClose, loading }) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-800 bg-slate-900 rounded-b-2xl">
-          <p className="text-xs text-slate-400">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-white rounded-b-2xl">
+          <p className="text-xs text-slate-500">
             แก้ไขแต่ละรายการได้โดยตรงก่อนบันทึกลง Supabase DB
           </p>
           <div className="flex gap-2">
-            <button onClick={onClose} disabled={loading} className="px-4 py-2 text-sm font-medium rounded-lg border border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors cursor-pointer">
+            <button onClick={onClose} disabled={loading} className="px-4 py-2 text-sm font-medium rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer">
               ยกเลิก
             </button>
             <button
@@ -106,13 +106,13 @@ function BulkRow({ row, onChange, onRemove }) {
   return (
     <div className={`rounded-xl border p-4 transition-colors ${
       row._error
-        ? 'border-red-500/80 bg-red-950/30'
-        : 'border-slate-700/80 bg-slate-800/80 hover:border-slate-600'
+        ? 'border-red-300 bg-red-50'
+        : 'border-slate-200 bg-slate-50 hover:border-slate-300'
     }`}>
       <div className="grid grid-cols-12 gap-3 items-start">
         {/* Title */}
         <div className="col-span-12 sm:col-span-4">
-          <label className="text-xs font-medium text-slate-300 mb-1 block">ชื่อกิจกรรม *</label>
+          <label className="text-xs font-medium text-slate-700 mb-1 block">ชื่อกิจกรรม *</label>
           <input
             type="text"
             value={row.title ?? ''}
@@ -123,14 +123,14 @@ function BulkRow({ row, onChange, onRemove }) {
 
         {/* Type Enum Dropdown */}
         <div className="col-span-6 sm:col-span-2">
-          <label className="text-xs font-medium text-slate-300 mb-1 block">ประเภทกิจกรรม (Enum)</label>
+          <label className="text-xs font-medium text-slate-700 mb-1 block">ประเภทกิจกรรม (Enum)</label>
           <select
             value={row.event_type ?? 'activity'}
             onChange={(e) => onChange('event_type', e.target.value)}
             className={rowInput()}
           >
             {EVENT_TYPES.map((t) => (
-              <option key={t.value} value={t.value} className="bg-slate-900 text-white">
+              <option key={t.value} value={t.value} className="bg-white text-slate-900">
                 {t.label}
               </option>
             ))}
@@ -139,29 +139,29 @@ function BulkRow({ row, onChange, onRemove }) {
 
         {/* Start date */}
         <div className="col-span-6 sm:col-span-2">
-          <label className="text-xs font-medium text-slate-300 mb-1 block">วันเริ่มต้น *</label>
+          <label className="text-xs font-medium text-slate-700 mb-1 block">วันเริ่มต้น *</label>
           <input
             type="date"
             value={row.start_date ?? ''}
             onChange={(e) => onChange('start_date', e.target.value)}
-            className={`${rowInput(row._error?.includes('start_date'))} [color-scheme:dark]`}
+            className={rowInput(row._error?.includes('start_date'))}
           />
         </div>
 
         {/* End date */}
         <div className="col-span-6 sm:col-span-2">
-          <label className="text-xs font-medium text-slate-300 mb-1 block">วันสิ้นสุด *</label>
+          <label className="text-xs font-medium text-slate-700 mb-1 block">วันสิ้นสุด *</label>
           <input
             type="date"
             value={row.end_date ?? ''}
             onChange={(e) => onChange('end_date', e.target.value)}
-            className={`${rowInput(row._error?.includes('end_date'))} [color-scheme:dark]`}
+            className={rowInput(row._error?.includes('end_date'))}
           />
         </div>
 
         {/* Academic Term */}
         <div className="col-span-5 sm:col-span-1">
-          <label className="text-xs font-medium text-slate-300 mb-1 block">ภาคเรียน</label>
+          <label className="text-xs font-medium text-slate-700 mb-1 block">ภาคเรียน</label>
           <input
             type="text"
             value={row.academic_term ?? ''}
@@ -205,8 +205,8 @@ function BulkRow({ row, onChange, onRemove }) {
 // 🟢 ปรับแต่งสไตล์ Input ให้รองรับ Dark Background และตัวอักษรสีขาวสว่าง
 function rowInput(hasError) {
   return `w-full px-3 py-1.5 text-xs rounded-lg border transition-all focus:outline-none focus:ring-1 focus:ring-indigo-500
-    bg-slate-900 text-white placeholder-slate-500 font-normal
-    ${hasError ? 'border-red-500 ring-1 ring-red-500/50' : 'border-slate-700 hover:border-slate-600'}`;
+    bg-white text-slate-900 placeholder-slate-400 font-normal
+    ${hasError ? 'border-red-500 ring-1 ring-red-500/50' : 'border-slate-300 hover:border-slate-400'}`;
 }
 
 function validateRow(row) {

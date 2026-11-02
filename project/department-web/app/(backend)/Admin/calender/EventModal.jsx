@@ -64,13 +64,13 @@ export default function EventModal({ mode, initialData, onSave, onClose, loading
 
   return (
     <ModalOverlay onClose={onClose}>
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg mx-4" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
-          <h2 className="font-semibold text-gray-900 dark:text-gray-50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <h2 className="font-semibold text-gray-900">
             {mode === 'edit' ? 'แก้ไขกิจกรรม' : 'เพิ่มกิจกรรมใหม่'}
           </h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+          <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
             <XIcon />
           </button>
         </div>
@@ -150,7 +150,7 @@ export default function EventModal({ mode, initialData, onSave, onClose, loading
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
             >
               ยกเลิก
             </button>
@@ -186,7 +186,7 @@ export function ModalOverlay({ onClose, children }) {
 function Field({ label, error, children }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{label}</label>
+      <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
       {children}
       {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
     </div>
@@ -195,10 +195,10 @@ function Field({ label, error, children }) {
 
 function inputClass(hasError) {
   return `w-full px-3 py-2 text-sm rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500
-    bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100
+    bg-white text-gray-900
     ${hasError
-      ? 'border-red-400 dark:border-red-500'
-      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'}`;
+      ? 'border-red-400'
+      : 'border-gray-300 hover:border-gray-400'}`;
 }
 
 function XIcon() {

@@ -7,12 +7,12 @@ import { useState, useCallback, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import EventTable from './Eventtable';
 import EventModal from './EventModal';
-import DeleteConfirmModal from './Deleteconfirmmodal';
 import PdfImportModal from './Pdfimportmodal';
 import BulkPreviewModal from './Bulkpreviewmodal';
 import CustomerPreview from './Customerpreview';
 import Toast from './Toast';
 import Button from "@components/button";
+import ConfirmDialog from "@components/ConfirmDialog";
 
 // ---------------------------------------------------------------------------
 // Supabase client (publishable/anon key — safe for client-side)
@@ -314,14 +314,17 @@ export default function CalenderClient({ initialEvents = [], adminUser }) {
         />
       )}
 
-      {deleteModal.open && (
-        <DeleteConfirmModal
-          event={deleteModal.event}
-          onConfirm={() => handleDeleteEvent(deleteModal.event)}
-          onClose={() => setDeleteModal({ open: false, event: null })}
-          loading={loading}
-        />
-      )}
+      <ConfirmDialog
+        open={deleteModal.open}
+        title="ยืนยันการลบกิจกรรม"
+        message={deleteModal.event
+          ? `ต้องการลบกิจกรรม "${deleteModal.event.title}" ใช่หรือไม่? การดำเนินการนี้ไม่สามารถย้อนกลับได้`
+          : ""}
+        confirmLabel="ลบกิจกรรม"
+        onConfirm={() => handleDeleteEvent(deleteModal.event)}
+        onCancel={() => setDeleteModal({ open: false, event: null })}
+        loading={loading}
+      />
 
       {pdfModal && (
         <PdfImportModal
