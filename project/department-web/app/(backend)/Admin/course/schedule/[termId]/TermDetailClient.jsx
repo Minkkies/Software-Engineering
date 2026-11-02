@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { browserSupabase } from '../../../../../../lib/supabase/courseSupabase.browser';
+import Button from "@components/button";
 
 
 import CourseTableList from './components/CourseTableList';
@@ -47,7 +48,9 @@ export default function TermDetailClient({ semester, initialCourses, faculty }) 
             <p className="text-xs text-slate-500"><Link href="/Admin/course" className="hover:underline">จัดการหลักสูตร</Link> › <Link href="/Admin/course/schedule" className="hover:underline">ตารางเรียนในสาขา</Link> › <span className="text-slate-800">{semester}</span></p>
             <h1 className="mt-2 text-3xl font-bold text-slate-900">รายวิชาและตารางเรียน <span className="text-blue-600">{semester}</span></h1>
           </div>
-          <button onClick={() => setEditor({ course: null })} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700">+ เพิ่มรายวิชาใหม่</button>
+          <Button onClick={() => setEditor({ course: null })} icon="plus">
+            เพิ่มรายวิชาใหม่
+          </Button>
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">

@@ -6,19 +6,14 @@ export const dynamic = 'force-dynamic';
 
 export default async function SchedulePage() {
   const { supabase } = await requireAdmin();
-  const [
-    { data, error },
-    { data: pdfRows, error: pdfError },
-  ] = await Promise.all([
-    supabase.from('courses').select('semester, updated_at, course_schedules(id)').not('semester', 'is', null),
-    supabase.from('schedule_pdf_files').select('semester, file_name, file_path, file_size, updated_at'),
-  ]);
+  const { data, error } = await supabase
+    .from('courses')
+    .select('semester, updated_at, course_schedules(id)')
+    .not('semester', 'is', null);
 
   if (error) {
     console.error('Error fetching course schedules:', error);
   }
-  if (pdfError) console.error('Error fetching schedule PDFs:', pdfError);
-  const pdfByTerm = new Map((pdfRows ?? []).map((pdf) => [pdf.semester, pdf]));
 
   const byTerm = {};
   
@@ -29,8 +24,7 @@ export default async function SchedulePage() {
       semester: c.semester, 
       courses: 0, 
       slots: 0, 
-      updated: c.updated_at || '',
-      pdf: pdfByTerm.get(c.semester) ?? null,
+      updated: c.updated_at || ''
     });
     
     t.courses += 1;

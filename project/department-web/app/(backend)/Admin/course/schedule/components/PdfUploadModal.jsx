@@ -27,31 +27,9 @@ export default function PdfUploadModal({ existingTerms = [], onClose, onDone }) 
 
   async function save() {
     setBusy(true); setError('');
-    const db = browserSupabase();
-    const path = `${semester.replace('/', '-')}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-    const { error: uploadError } = await db.storage.from('schedule-pdfs').upload(path, file, { contentType: 'application/pdf' });
-    if (uploadError) {
-      setBusy(false);
-      return setError('อัปโหลดไฟล์ล้มเหลว: ' + uploadError.message);
-    }
-    const { error: err } = await db.rpc('replace_term_courses', { p_semester: semester, p_payload: parsed?.courses ?? [] });
-    if (err) {
-      await db.storage.from('schedule-pdfs').remove([path]);
-      setBusy(false);
-      return setError('บันทึกล้มเหลว (ข้อมูลเดิมไม่ถูกเปลี่ยนแปลง): ' + err.message);
-    }
-    const { error: fileError } = await db.from('schedule_pdf_files').upsert({
-      semester,
-      file_name: file.name,
-      file_path: path,
-      file_size: file.size,
-      updated_at: new Date().toISOString(),
-    });
+    const { error: err } = await browserSupabase().rpc('replace_term_courses', { p_semester: semester, p_payload: parsed?.courses ?? [] });
     setBusy(false);
-    if (fileError) {
-      await db.storage.from('schedule-pdfs').remove([path]);
-      return setError('บันทึกข้อมูลไฟล์ล้มเหลว: ' + fileError.message);
-    }
+    if (err) return setError('บันทึกล้มเหลว (ข้อมูลเดิมไม่ถูกเปลี่ยนแปลง): ' + err.message);
     onDone(semester);
   }
 

@@ -76,7 +76,7 @@ export default function Mr30Client({ initialDocs, adminId }) {
             <h1 className="mt-2 text-3xl font-bold text-slate-900">รายการเอกสาร มร.30</h1>
             <p className="max-w-xl text-slate-500">ดัชนีรวมเอกสารตารางเรียน มร.30 ของแต่ละภาคการศึกษา ตรวจสอบสถานะ และเผยแพร่เข้าสู่ระบบ</p>
           </div>
-          <Button icon="plus" onClick={() => setUpload(true)}>
+          <Button icon="upload" onClick={() => setUpload(true)}>
             อัปโหลดเอกสารใหม่
           </Button>
         </div>
