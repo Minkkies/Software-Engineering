@@ -56,8 +56,32 @@ export default function UserFormClient({ userId }) {
     const [notFound, setNotFound] = useState(false);
     const [saving, setSaving] = useState(false);
     const [submitError, setSubmitError] = useState("");
+    const [facultyId, setFacultyId] = useState("");
 
     useEffect(() => {
+        const selectedFacultyId = new URLSearchParams(window.location.search).get("facultyId") || "";
+        setFacultyId(selectedFacultyId);
+        if (selectedFacultyId && !isEdit) {
+            (async () => {
+                const { data: faculty, error } = await createClient()
+                    .from("faculty_members")
+                    .select("id, full_name, email, kind")
+                    .eq("id", selectedFacultyId)
+                    .is("profile_id", null)
+                    .maybeSingle();
+                if (error) setSubmitError(error.message);
+                else if (faculty) {
+                    const [firstName = "", ...lastNames] = (faculty.full_name || "").split(/\s+/);
+                    setForm((current) => ({
+                        ...current,
+                        firstName,
+                        lastName: lastNames.join(" "),
+                        email: faculty.email || "",
+                        role: faculty.kind || "staff",
+                    }));
+                }
+            })();
+        }
         if (!isEdit) return;
         (async () => {
             const supabase = createClient();
@@ -132,7 +156,7 @@ export default function UserFormClient({ userId }) {
                 const response = await fetch("/api/admin/users", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload),
+                    body: JSON.stringify({ ...payload, facultyId }),
                 });
                 const result = await response.json().catch(() => ({}));
                 if (!response.ok) throw new Error(result.error || "ไม่สามารถสร้างบัญชีได้");
