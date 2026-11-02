@@ -14,10 +14,14 @@ const MODULES = [
 export default function CourseClient({ stats }) {
   return (
     <div className="min-h-screen bg-slate-50 px-6 py-8">
-      <div className="mx-auto max-w-6xl">
-        <p className="text-xs text-slate-500">จัดการหลักสูตร › <span className="text-slate-800">จัดการตารางเรียนและเอกสาร มร.30</span></p>
-        <h1 className="mt-2 text-3xl font-bold text-slate-900">จัดการตารางเรียนและเอกสาร มร.30</h1>
-        <p className="mt-1 max-w-2xl text-slate-500">ปรับปรุงข้อมูลตารางเรียนในสาขาวิชาและจัดการเอกสาร มร.30 เพื่อเตรียมความพร้อมสำหรับแต่ละภาคการศึกษา</p>
+      <div>
+        <h1 className="text-2xl font-bold text-[#1a1a1a]">
+          จัดการตารางเรียนและเอกสาร มร.30
+        </h1>
+        <p className="mt-1 text-sm text-gray-500">
+          ปรับปรุงข้อมูลตารางเรียนในสาขาวิชาและจัดการเอกสาร มร.30 
+          เพื่อเตรียมความพร้อมสำหรับแต่ละภาคการศึกษา
+        </p>
         <div className="mt-8 grid gap-6 md:grid-cols-2">
           {MODULES.map((m) => (
             <Link key={m.href} href={m.href}

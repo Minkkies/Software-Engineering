@@ -41,7 +41,7 @@ export default function Navbar({ user = null, onLogout }) {
   const [profileOpen, setProfileOpen] = useState(false);
   const visibleNavLinks = NAV_LINKS.filter(
     (link) =>
-      (link.href !== "/schedule" || user) &&
+      (link.href !== "/schedule" || (user && user.role !== "admin")) &&
       (link.href !== "/Admin" || (user && user.role !== "student"))
   );
 

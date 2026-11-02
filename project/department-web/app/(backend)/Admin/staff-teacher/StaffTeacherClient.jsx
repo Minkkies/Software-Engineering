@@ -229,11 +229,8 @@ export default function StaffTeacherClient() {
             <div className="mx-auto w-full min-w-0 max-w-screen-2xl space-y-4 sm:space-y-5 lg:space-y-6">
                 <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                     <div>
-                        <div className="mb-2 flex items-center gap-2 text-sm text-slate-500">
-                            <span>ระบบผู้ดูแล</span><span>/</span><span className="text-blue-700">จัดการบุคลากรและอาจารย์</span>
-                        </div>
-                        <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">จัดการบุคลากรและอาจารย์</h1>
-                        <p className="mt-2 text-sm text-slate-500">จัดการข้อมูลที่บันทึกอยู่ในฐานข้อมูล Supabase</p>
+                        <h1 className="text-2xl font-bold text-[#1a1a1a]">จัดการบุคลากรและอาจารย์</h1>
+                        <p className="mt-1 text-sm text-gray-500">จัดการข้อมูลที่บันทึกอยู่ในฐานข้อมูล Supabase</p>
                     </div>
                     <button onClick={openCreate} className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20">
                         <Icon name="plus" /> เพิ่มบุคลากรใหม่

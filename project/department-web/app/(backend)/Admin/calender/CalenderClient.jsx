@@ -208,13 +208,13 @@ export default function CalenderClient({ initialEvents = [], adminUser }) {
     // 📌 [จุดที่แก้ไขธีม]: เปลี่ยนพื้นหลังสว่าง bg-slate-50 ถอด dark:bg-... ออกทั้งหมด
     <div className="min-h-screen bg-slate-50 text-slate-800">
       {/* ---- Header ---- */}
-      <div className="border-b border-slate-200 bg-white shadow-sm">
+      <div>
         <div className="max-w-screen-xl mx-auto px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+            <h1 className="text-2xl font-bold text-[#1a1a1a]">
               ระบบจัดการปฏิทินการศึกษา
             </h1>
-            <p className="mt-0.5 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-gray-500">
               จัดการกิจกรรม ตรวจสอบ และนำเข้าข้อมูลปฏิทินประจำปีการศึกษา
             </p>
           </div>
