@@ -3,6 +3,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
+import Button from "@components/button";
 import {
   DAYS,
   toMin,
@@ -145,9 +146,73 @@ export default function ScheduleClient({
     );
   }, [availableBranchCourses, searchBranchTerm]);
 
-  // พิมพ์ PDF ตารางเรียน
-  const handlePrintPDF = () => {
-    window.print();
+  // ดาวน์โหลดตารางเรียนเป็น PDF
+  const handleDownloadPdf = async () => {
+    let exportNode;
+    try {
+      const { default: html2pdf } = await import('html2pdf.js');
+      const escapeHtml = (value) => String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;');
+      const sessionRows = courses.flatMap((course) =>
+        (course.sessions || []).map((session) => `
+          <tr>
+            <td>${escapeHtml(DAYS[session.day_of_week - 1] || 'ไม่ระบุ')}</td>
+            <td>${escapeHtml(session.start_time)}–${escapeHtml(session.end_time)}</td>
+            <td>${escapeHtml(course.code)}</td>
+            <td>${escapeHtml(course.name)}</td>
+            <td>${escapeHtml(session.room || '—')}</td>
+            <td>${escapeHtml(session.session_type || '—')}</td>
+          </tr>
+        `)
+      ).join('');
+
+      exportNode = document.createElement('div');
+      exportNode.style.cssText = 'position: absolute; left: 0; top: 0; z-index: 2147483647; width: 1000px; padding: 32px; box-sizing: border-box; background: #ffffff; color: #111827; font-family: Arial, sans-serif;';
+      exportNode.innerHTML = `
+        <h1 style="margin: 0 0 8px; font-size: 24px;">ตารางเรียนส่วนตัว</h1>
+        <p style="margin: 0 0 20px; font-size: 14px;">ภาคเรียนที่ ${escapeHtml(initialSemester)} | ${escapeHtml(student.name)} (${escapeHtml(student.code)})</p>
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+          <thead>
+            <tr style="background: #e5e7eb;">
+              <th style="padding: 8px; border: 1px solid #9ca3af;">วัน</th>
+              <th style="padding: 8px; border: 1px solid #9ca3af;">เวลา</th>
+              <th style="padding: 8px; border: 1px solid #9ca3af;">รหัสวิชา</th>
+              <th style="padding: 8px; border: 1px solid #9ca3af; text-align: left;">ชื่อวิชา</th>
+              <th style="padding: 8px; border: 1px solid #9ca3af;">ห้อง</th>
+              <th style="padding: 8px; border: 1px solid #9ca3af;">ประเภท</th>
+            </tr>
+          </thead>
+          <tbody>${sessionRows || '<tr><td colspan="6" style="padding: 16px; border: 1px solid #9ca3af; text-align: center;">ไม่พบข้อมูลตารางเรียน</td></tr>'}</tbody>
+        </table>
+      `;
+      document.body.appendChild(exportNode);
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+      const worker = html2pdf().set({
+        margin: 10,
+        filename: `ตารางเรียน-${initialSemester}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          backgroundColor: '#ffffff',
+          useCORS: true,
+          logging: false,
+          width: exportNode.scrollWidth,
+          height: exportNode.scrollHeight,
+        },
+        pagebreak: { mode: ['css', 'legacy'], avoid: ['tr'] },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+      }).from(exportNode).toCanvas().toPdf();
+      await worker.save();
+    } catch (error) {
+      console.error('ไม่สามารถดาวน์โหลดตารางเรียนเป็น PDF ได้:', error);
+      alert('ไม่สามารถดาวน์โหลดตารางเรียนเป็น PDF ได้: ' + error.message);
+    } finally {
+      exportNode?.remove();
+    }
   };
 
   // 1. เพิ่มวิชาในสาขา
@@ -325,37 +390,40 @@ export default function ScheduleClient({
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* ปุ่มดาวน์โหลด PDF / พิมพ์ตารางเรียน */}
-            <button
-              onClick={handlePrintPDF}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3.5 py-2 text-xs font-semibold text-white hover:bg-white/20 transition-colors"
+            {/* ปุ่มบันทึกตารางเรียนเป็นภาพ */}
+            <Button
+              icon="download"
+              variant="outline"
+              onClick={handleDownloadPdf}
             >
-              🖨️ ดาวน์โหลด / พิมพ์ PDF
-            </button>
+              ดาวน์โหลดตารางเรียน PDF
+            </Button>
 
             {/* ปุ่มเลือกดู มร.30 PDF จาก Storage */}
-            <button
+            <Button
+              icon="file"
+              variant="outline"
               onClick={() => setIsMr30ListOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3.5 py-2 text-xs font-semibold text-white hover:bg-white/20 transition-colors"
             >
-              📄 เลือกดู มร.30 (PDF)
-            </button>
+              เลือกดู มร.30 (PDF)
+            </Button>
 
             {/* ปุ่มเพิ่มวิชาในสาขา */}
-            <button
+            <Button
+              icon="plus"
+              variant="accent"
               onClick={() => setIsBranchModalOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-white text-blue-900 px-4 py-2 text-xs font-bold shadow-xs hover:bg-blue-50 transition-colors"
-            >
-              + เลือกวิชาในสาขา
-            </button>
+              >
+              เลือกวิชาในสาขา
+            </Button>
 
             {/* ปุ่มกรอก มร.30 เอง */}
-            <button
+            <Button
+              icon="plus"
               onClick={() => setIsManualModalOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-600 transition-colors"
-            >
-              + กรอกวิชา มร.30 เอง
-            </button>
+             >
+              กรอกวิชา มร.30 เอง
+            </Button>
           </div>
         </div>
       </div>
