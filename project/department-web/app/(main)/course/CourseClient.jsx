@@ -30,25 +30,13 @@ export default function CourseClient({ courses = [], faculty = [] }) {
   }, [courses, q, day, room]);
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 font-sans">
-      <div className="mx-auto max-w-7xl space-y-6">
-        
-        {/* 🔵 Header Zone (ธีมน้ำเงิน-ขาว คลีน) */}
-        <div className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-white font-bold text-xl shadow-md">
-              📖
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-blue-900">
-                ตารางวิชาเปิดสอน
-              </h1>
-              <p className="text-sm font-semibold text-slate-600 mt-0.5">
-                ค้นหารายวิชา เวลาเรียน ห้องเรียน และวันจัดสอบประจำภาคการศึกษา
-              </p>
-            </div>
-          </div>
-        </div>
+    <main className="min-h-screen bg-[#F5F6F8] pb-16 font-sans">
+      <header className="bg-blue-800 px-4 pb-20 pt-10 text-center text-white">
+          <span className="inline-block rounded-full border border-white/40 px-3 py-0.5 text-[11px] font-medium">Courses &amp; Schedule</span>
+          <h1 className="mt-3 text-2xl font-extrabold sm:text-3xl">ตารางวิชาเปิดสอน</h1>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-blue-100">ค้นหารายวิชา เวลาเรียน ห้องเรียน และวันจัดสอบประจำภาคการศึกษา</p>
+      </header>
+      <div className="mx-auto -mt-10 max-w-7xl space-y-6 px-4 sm:px-6">
 
         {/* 🔵 Main Content Card */}
         <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
@@ -171,6 +159,6 @@ export default function CourseClient({ courses = [], faculty = [] }) {
 
         </div>
       </div>
-    </div>
+    </main>
   );
 }

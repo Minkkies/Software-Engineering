@@ -18,8 +18,11 @@ import { generateCalendarPdf } from '../../../lib/generateCalendarPdf';
 
 export default function CalenderClient({ initialEvents = [] }) {
   // Calendar State
-  const [currentDate, setCurrentDate] = useState(new Date(2026, 9, 1));
-  const [selectedDate, setSelectedDate] = useState(30);
+  const [currentDate, setCurrentDate] = useState(() => {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), 1);
+  });
+  const [selectedDate, setSelectedDate] = useState(() => new Date().getDate());
   const [searchQuery] = useState('');
 
   // PDF Modal State
@@ -40,10 +43,10 @@ export default function CalenderClient({ initialEvents = [] }) {
   ];
 
   // 🟢 ฟังก์ชันดาวน์โหลด PDF ดึงข้อมูลจริงจาก Supabase
-  const handleDownload = (term) => {
+  const handleDownload = async (term) => {
     setGeneratingPdfId(term.id);
     try {
-      generateCalendarPdf(term, initialEvents);
+      await generateCalendarPdf(term, initialEvents);
     } catch (err) {
       console.error(err);
     } finally {
@@ -126,27 +129,15 @@ export default function CalenderClient({ initialEvents = [] }) {
   }, [initialEvents, selectedDate, searchQuery, currentDate]);
 
   return (
-    <div className="w-full bg-slate-50 min-h-screen text-slate-800 p-4 lg:p-6">
-      
-      {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-bold text-slate-900">
-              ระบบจัดการปฏิทินการศึกษา
-            </h2>
-            <span className="px-2.5 py-0.5 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">
-              ภาคการศึกษา 2/2569
-            </span>
-          </div>
-          <p className="text-sm text-slate-500 mt-1">
-            ตรวจสอบกำหนดการวิชาการ วันสอบ และกิจกรรมประจำปี
-          </p>
-        </div>
-      </div>
+    <main className="w-full min-h-screen bg-[#F5F6F8] text-slate-800 pb-16">
+      <header className="bg-blue-800 px-4 pb-20 pt-10 text-center text-white">
+        <span className="inline-block rounded-full border border-white/40 px-3 py-0.5 text-[11px] font-medium">Academic Calendar</span>
+        <h1 className="mt-3 text-2xl font-extrabold sm:text-3xl">ปฏิทินการศึกษา</h1>
+        <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-blue-100">ตรวจสอบกำหนดการวิชาการ วันสอบ และกิจกรรมประจำปี</p>
+      </header>
 
       {/* Grid Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="mx-auto -mt-10 grid max-w-7xl grid-cols-1 gap-6 px-4 items-start lg:grid-cols-12 lg:px-6">
 
         {/* ฝั่งซ้าย: ปฏิทิน + แบนเนอร์ PDF */}
         <div className="lg:col-span-5 xl:col-span-4 space-y-4">
@@ -401,6 +392,6 @@ export default function CalenderClient({ initialEvents = [] }) {
         </div>
       )}
 
-    </div>
+    </main>
   );
 }

@@ -18,8 +18,10 @@ function getEventTypeBadge(type) {
   }
 }
 
-export function generateCalendarPdf(termConfig, events = []) {
+export async function generateCalendarPdf(termConfig, events = []) {
   try {
+    const { default: html2pdf } = await import('html2pdf.js');
+
     // 1. ดึงข้อมูลที่ตรงตาม academic_term หรือช่วงวัน
     const filteredEvents = events.filter((e) => {
       if (termConfig.academicTerm && e.academic_term) {
@@ -51,48 +53,14 @@ export function generateCalendarPdf(termConfig, events = []) {
       </tr>
     `;
 
-    // 3. เปิด Pop-up Window เพื่อ Print/Save PDF ภาษาไทย
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      alert('กรุณาอนุญาตให้เบราว์เซอร์เปิด Pop-up เพื่อพิมพ์เอกสาร PDF');
-      return;
-    }
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>ปฏิทินการศึกษา - ${termConfig.title}</title>
-          <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+    const pdfContent = document.createElement('div');
+    pdfContent.style.cssText = 'position: fixed; left: 0; top: 0; z-index: 2147483647; width: 720px; min-height: 1020px; padding: 24px; box-sizing: border-box; visibility: visible; opacity: 1; color: #1f2937; background: #fff; font-family: Arial, sans-serif;';
+    pdfContent.innerHTML = `
           <style>
-            body {
-              font-family: 'Sarabun', sans-serif;
-              padding: 24px;
-              color: #1f2937;
-              background-color: #fff;
-            }
-            @page {
-              size: A4 portrait;
-              margin: 15mm;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-top: 16px;
-            }
-            th {
-              background-color: #d9534f;
-              color: #ffffff;
-              padding: 12px 8px;
-              font-size: 14px;
-              font-weight: 700;
-            }
-            tr:nth-child(even) {
-              background-color: #f9fafb;
-            }
+            table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+            th { background: #d9534f; color: #fff; padding: 12px 8px; font-size: 14px; }
+            tr:nth-child(even) { background: #f9fafb; }
           </style>
-        </head>
-        <body>
           <div style="text-align: center; margin-bottom: 20px;">
             <h1 style="font-size: 22px; font-weight: 700; color: #111827; margin: 0 0 6px 0;">มหาวิทยาลัยรามคำแหง</h1>
             <h2 style="font-size: 16px; font-weight: 600; color: #4b5563; margin: 0;">ปฏิทินการศึกษา - ${termConfig.title}</h2>
@@ -111,19 +79,29 @@ export function generateCalendarPdf(termConfig, events = []) {
               ${rowsHtml}
             </tbody>
           </table>
-
-          <script>
-            window.onload = function() {
-              setTimeout(function() {
-                window.print();
-              }, 300);
-            };
-          </script>
-        </body>
-      </html>
-    `);
-
-    printWindow.document.close();
+    `;
+    document.body.appendChild(pdfContent);
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    try {
+      const worker = html2pdf().set({
+        margin: 15,
+        filename: `ปฏิทินการศึกษา-${termConfig.academicTerm || termConfig.id}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          backgroundColor: '#ffffff',
+          useCORS: true,
+          logging: false,
+          width: pdfContent.scrollWidth,
+          height: pdfContent.scrollHeight,
+        },
+        pagebreak: { mode: ['css', 'legacy'], avoid: ['tr'] },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      }).from(pdfContent).toCanvas().toPdf();
+      await worker.save();
+    } finally {
+      pdfContent.remove();
+    }
 
   } catch (error) {
     console.error('PDF Generation Exception:', error);

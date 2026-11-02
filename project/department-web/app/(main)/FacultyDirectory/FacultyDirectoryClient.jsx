@@ -185,20 +185,15 @@ export default function FacultyClient({ members = [] }) {
     const heading = kind === "teacher" ? "อาจารย์ประจำภาควิชา" : "เจ้าหน้าที่ / บุคลากร";
 
     return (
-        <div className="min-h-[calc(100vh-4rem)] bg-[#F5F6F8]">
-            {/* Banner */}
-            <section className="bg-[#0033a0] text-white">
-                <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-                    <h1 className="text-3xl font-bold sm:text-4xl">คณาจารย์และบุคลากร</h1>
-                    <p className="mt-3 max-w-2xl text-sm leading-relaxed text-blue-100">
-                        ทำความรู้จักกับคณาจารย์ผู้ทรงคุณวุฒิและบุคลากรสายสนับสนุนของภาควิชาวิทยาการคอมพิวเตอร์
-                        เรามุ่งมั่นในการสร้างสรรค์นวัตกรรมและการเรียนการสอนที่มีคุณภาพระดับสากล
-                    </p>
-                </div>
-            </section>
+        <main className="min-h-[calc(100vh-4rem)] bg-[#F5F6F8] pb-16">
+            <header className="bg-blue-800 px-4 pb-20 pt-10 text-center text-white">
+                <span className="inline-block rounded-full border border-white/40 px-3 py-0.5 text-[11px] font-medium">Faculty Directory</span>
+                <h1 className="mt-3 text-2xl font-extrabold sm:text-3xl">คณาจารย์และบุคลากร</h1>
+                <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-blue-100">ทำความรู้จักกับคณาจารย์และบุคลากรของสาขาวิทยาการคอมพิวเตอร์</p>
+            </header>
 
             {/* Search + filters */}
-            <section className="border-b border-gray-200 bg-white">
+            <section className="-mt-10 relative z-10 border-b border-gray-200 bg-white">
                 <div className="mx-auto max-w-6xl space-y-3 px-4 py-4 sm:px-6">
                     <div className="flex flex-col gap-3 sm:flex-row">
                         <label className="relative flex-1">
@@ -273,7 +268,7 @@ export default function FacultyClient({ members = [] }) {
             </section>
 
             {/* List */}
-            <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+            <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
                 <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-4">
                         <h2 className="border-l-4 border-[#0033a0] pl-3 text-lg font-bold text-[#1a1a1a]">
@@ -325,7 +320,7 @@ export default function FacultyClient({ members = [] }) {
                         ))}
                     </div>
                 )}
-            </main>
-        </div>
+            </div>
+        </main>
     );
 }
