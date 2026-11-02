@@ -1,6 +1,7 @@
 'use client';
 // CourseClient.jsx — two module cards (mirrors mockup 1)
 import Link from 'next/link';
+import Button from "@components/button";
 
 const MODULES = [
   { href: '/Admin/course/schedule', title: 'จัดการตารางเรียนในสาขา', sub: 'Department Class Schedule Management',
@@ -33,7 +34,9 @@ export default function CourseClient({ stats }) {
                 {m.tags.map((t) => <span key={t} className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600">{t}</span>)}
               </div>
               <p className="mt-4 text-sm font-medium text-blue-700">{m.stat(stats)}</p>
-              <span className="mt-4 rounded-lg bg-blue-600 py-2.5 text-center text-sm font-medium text-white group-hover:bg-blue-700">เข้าใช้งานโมดูล →</span>
+              <Button icon="arrowRight" className="mt-4">
+                เข้าใช้งานโมดูล
+              </Button>
             </Link>
           ))}
         </div>

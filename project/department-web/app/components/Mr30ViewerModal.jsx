@@ -1,7 +1,7 @@
 'use client';
 // Mr30ViewerModal.jsx — read-only PDF preview (iframe, signed URL) + download
 import { useEffect, useState } from 'react';
-import { browserSupabase } from '../../../../../../lib/supabase/courseSupabase.browser';
+import { browserSupabase } from '../../lib/supabase/courseSupabase.browser';
 
 export default function Mr30ViewerModal({ doc, onClose }) {
   const [url, setUrl] = useState(null);

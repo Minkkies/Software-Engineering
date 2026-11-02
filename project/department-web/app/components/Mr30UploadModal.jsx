@@ -1,7 +1,7 @@
 'use client';
 // Mr30UploadModal.jsx — upload PDF to Storage bucket "mr30-documents" + insert mr30_documents row
 import { useRef, useState } from 'react';
-import { browserSupabase } from '../../../../../../lib/supabase/courseSupabase.browser';
+import { browserSupabase } from '../../lib/supabase/courseSupabase.browser';
 
 const BUCKET = 'mr30-documents';
 const MAX = 20 * 1024 * 1024;

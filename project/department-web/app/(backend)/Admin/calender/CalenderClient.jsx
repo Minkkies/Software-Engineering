@@ -12,6 +12,7 @@ import PdfImportModal from './Pdfimportmodal';
 import BulkPreviewModal from './Bulkpreviewmodal';
 import CustomerPreview from './Customerpreview';
 import Toast from './Toast';
+import Button from "@components/button";
 
 // ---------------------------------------------------------------------------
 // Supabase client (publishable/anon key — safe for client-side)
@@ -232,20 +233,13 @@ export default function CalenderClient({ initialEvents = [], adminUser }) {
 
             {activeTab === 'table' && (
               <>
-                <button
-                  onClick={() => setPdfModal(true)}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-sm cursor-pointer"
-                >
-                  <UploadIcon />
+                <Button icon="upload" variant="outline" onClick={() => setPdfModal(true)}>
                   นำเข้า PDF
-                </button>
-                <button
-                  onClick={() => setEventModal({ open: true, mode: 'create', data: null })}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-sm cursor-pointer"
-                >
-                  <PlusIcon />
+                </Button >
+
+                <Button icon="plus" onClick={() => setEventModal({ open: true, mode: 'create', data: null })}>
                   เพิ่มกิจกรรม
-                </button>
+                </Button>
               </>
             )}
           </div>

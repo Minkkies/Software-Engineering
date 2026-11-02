@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@lib/supabase/client";
 import Button from "@components/button";
-import InfoCards from "@components/InfoCards";
 import DataTable, { downloadCsv } from "@components/DataTable";
 import ConfirmDialog from "@components/ConfirmDialog";
 

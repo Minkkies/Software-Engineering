@@ -21,7 +21,7 @@ export default function OverwriteConfirmModal({ semester, incoming, busy, onCanc
   const Col = ({ title, tone, courses, slots, list, listLabel }) => (
     <div className={`rounded-lg border p-4 ${tone}`}>
       <p className="text-xs font-medium text-slate-500">{title}</p>
-      <p className="mt-1 text-2xl font-bold text-slate-900">{courses} <span className="text-sm font-normal text-slate-500">วิชา</span></p>
+      <p className="mt-1 text-2xl font-bold !text-slate-900">{courses} <span className="text-sm font-normal !text-slate-500">วิชา</span></p>
       <p className="text-sm text-slate-600">{slots} ช่วงเวลาเรียน</p>
       <p className="mt-3 text-xs font-medium text-slate-500">{listLabel} ({list.length})</p>
       <p className="mt-1 max-h-24 overflow-y-auto font-mono text-xs text-slate-700">{list.join(', ') || '—'}</p>

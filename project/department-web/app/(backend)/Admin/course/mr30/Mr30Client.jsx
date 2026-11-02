@@ -3,8 +3,10 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { browserSupabase } from '../../../../../lib/supabase/courseSupabase.browser';
-import Mr30UploadModal from './components/Mr30UploadModal';
-import Mr30ViewerModal from './components/Mr30ViewerModal';
+import Mr30UploadModal from '@components/Mr30UploadModal';
+import Mr30ViewerModal from '@components/Mr30ViewerModal';
+import Button from "@components/button";
+import ConfirmDialog from "@components/ConfirmDialog";
 
 const BUCKET = 'mr30-documents';
 const STATUS = {
@@ -22,6 +24,8 @@ export default function Mr30Client({ initialDocs, adminId }) {
   const [view, setView] = useState(null);
   const [menu, setMenu] = useState(null);
   const [error, setError] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const shown = useMemo(() => docs.filter((d) => (!status || d.status === status)
     && (!q || `${d.title} ${d.semester}`.toLowerCase().includes(q.toLowerCase()))), [docs, q, status]);
@@ -36,13 +40,27 @@ export default function Mr30Client({ initialDocs, adminId }) {
     const { error: e } = await browserSupabase().from('mr30_documents').update({ status: s, updated_at: new Date().toISOString() }).eq('id', d.id);
     if (e) setError(e.message); else reload();
   }
-  async function remove(d) {
+  function remove(d) {
     setMenu(null);
-    if (!confirm(`ลบเอกสาร “${d.title}” อย่างถาวร?`)) return;
+    setDeleteTarget(d);
+  }
+  async function confirmRemove() {
+    if (!deleteTarget) return;
+    setDeleting(true);
     const db = browserSupabase();
-    await db.storage.from(BUCKET).remove([d.file_path]);
-    const { error: e } = await db.from('mr30_documents').delete().eq('id', d.id);
-    if (e) setError(e.message); else reload();
+    const { error: storageError } = await db.storage.from(BUCKET).remove([deleteTarget.file_path]);
+    if (storageError) {
+      setError(storageError.message);
+      setDeleting(false);
+      return;
+    }
+    const { error: e } = await db.from('mr30_documents').delete().eq('id', deleteTarget.id);
+    if (e) setError(e.message);
+    else {
+      setDeleteTarget(null);
+      reload();
+    }
+    setDeleting(false);
   }
   async function download(d) {
     const { data, error: e } = await browserSupabase().storage.from(BUCKET).createSignedUrl(d.file_path, 60, { download: d.title });
@@ -58,7 +76,9 @@ export default function Mr30Client({ initialDocs, adminId }) {
             <h1 className="mt-2 text-3xl font-bold text-slate-900">รายการเอกสาร มร.30</h1>
             <p className="max-w-xl text-slate-500">ดัชนีรวมเอกสารตารางเรียน มร.30 ของแต่ละภาคการศึกษา ตรวจสอบสถานะ และเผยแพร่เข้าสู่ระบบ</p>
           </div>
-          <button onClick={() => setUpload(true)} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700">+ อัปโหลดเอกสารใหม่</button>
+          <Button icon="plus" onClick={() => setUpload(true)}>
+            อัปโหลดเอกสารใหม่
+          </Button>
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -88,9 +108,9 @@ export default function Mr30Client({ initialDocs, adminId }) {
                     <button onClick={() => setMenu(menu === d.id ? null : d.id)} aria-label="เมนูเพิ่มเติม" className="rounded px-2 text-slate-500 hover:bg-slate-100">⋮</button>
                     {menu === d.id && (
                       <div className="absolute right-4 top-10 z-10 w-44 rounded-lg border border-slate-200 bg-white py-1 text-left shadow-lg">
-                        {d.status !== 'published' && <button onClick={() => setDocStatus(d, 'published')} className="block w-full px-3 py-2 text-left hover:bg-slate-50">เผยแพร่</button>}
-                        {d.status !== 'pending' && <button onClick={() => setDocStatus(d, 'pending')} className="block w-full px-3 py-2 text-left hover:bg-slate-50">ย้ายไปรอตรวจสอบ</button>}
-                        {d.status !== 'archived' && <button onClick={() => setDocStatus(d, 'archived')} className="block w-full px-3 py-2 text-left hover:bg-slate-50">จัดเก็บ</button>}
+                        {d.status !== 'published' && <button onClick={() => setDocStatus(d, 'published')} className="block w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50">เผยแพร่</button>}
+                        {d.status !== 'pending' && <button onClick={() => setDocStatus(d, 'pending')} className="block w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50">ย้ายไปรอตรวจสอบ</button>}
+                        {d.status !== 'archived' && <button onClick={() => setDocStatus(d, 'archived')} className="block w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50">จัดเก็บ</button>}
                         <button onClick={() => remove(d)} className="block w-full px-3 py-2 text-left text-red-600 hover:bg-red-50">ลบ</button>
                       </div>)}
                   </td>
@@ -104,6 +124,15 @@ export default function Mr30Client({ initialDocs, adminId }) {
       </div>
       {upload && <Mr30UploadModal adminId={adminId} onClose={() => setUpload(false)} onDone={() => { setUpload(false); reload(); }} />}
       {view && <Mr30ViewerModal doc={view} onClose={() => setView(null)} />}
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="ยืนยันการลบเอกสาร"
+        message={deleteTarget ? `ต้องการลบเอกสาร “${deleteTarget.title}” อย่างถาวรใช่หรือไม่?` : ""}
+        confirmLabel="ลบเอกสาร"
+        loading={deleting}
+        onConfirm={confirmRemove}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

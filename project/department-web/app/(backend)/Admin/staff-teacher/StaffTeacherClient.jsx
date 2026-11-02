@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "../../../../lib/supabase/client";
+import Button from "@components/button";
 
 const emptyForm = {
     full_name: "",
@@ -232,9 +233,9 @@ export default function StaffTeacherClient() {
                         <h1 className="text-2xl font-bold text-[#1a1a1a]">จัดการบุคลากรและอาจารย์</h1>
                         <p className="mt-1 text-sm text-gray-500">จัดการข้อมูลที่บันทึกอยู่ในฐานข้อมูล Supabase</p>
                     </div>
-                    <button onClick={openCreate} className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20">
-                        <Icon name="plus" /> เพิ่มบุคลากรใหม่
-                    </button>
+                    <Button icon="plus" onClick={openCreate}>
+                        เพิ่มบุคลากรใหม่
+                    </Button>
                 </div>
 
                 {pageError && (
