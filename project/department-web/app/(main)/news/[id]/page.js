@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 function formatThaiDate(value) {
   if (!value) return "";
@@ -53,6 +53,15 @@ export default async function NewsDetailPage({ params }) {
   const { id } = await params;
   const news = await getNews(id);
   if (!news) notFound();
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  );
+  const { error: viewError } = await supabase.rpc("increment_news_views", {
+    p_id: id,
+  });
+  if (viewError) console.error("นับยอดเข้าชมข่าวไม่สำเร็จ:", viewError.message);
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
