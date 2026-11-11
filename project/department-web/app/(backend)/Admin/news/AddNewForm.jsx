@@ -615,7 +615,6 @@ export default function AddNewForm({ initial = null, categories = CATEGORIES, on
 
             <div className="border-t border-gray-100 pt-3">
               <Toggle label="แสดงบนหน้าแรก" checked={showOnHome} onChange={setShowOnHome} />
-              <Toggle label="ปักหมุดข่าว" checked={pinned} onChange={setPinned} />
             </div>
           </div>
         </div>
