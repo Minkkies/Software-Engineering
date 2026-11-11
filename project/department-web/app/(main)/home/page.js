@@ -17,8 +17,10 @@ export default async function HomePage() {
   );
 
   const nowIso = new Date().toISOString();
+  // วันนี้ตามเวลาไทย (รูปแบบ YYYY-MM-DD) คำนวณฝั่ง server เพื่อไม่ให้ hydrate คลาดเคลื่อน
+  const todayIso = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" });
 
-  const [newsRes, catRes] = await Promise.all([
+  const [newsRes, catRes, eventsRes] = await Promise.all([
     supabase
       .from("news")
       .select(
@@ -36,6 +38,10 @@ export default async function HomePage() {
       .select("id, name")
       .order("sort_order", { ascending: true })
       .limit(5),
+    supabase
+      .from("calendar_events")
+      .select("id, title, event_type, start_date, end_date")
+      .order("start_date", { ascending: true }),
   ]);
 
   const news = (newsRes.data ?? []).map((n) => ({
@@ -48,5 +54,12 @@ export default async function HomePage() {
     categoryName: n.news_categories?.name ?? null,
   }));
 
-  return <HomeClient news={news} categories={catRes.data ?? []} />;
+  return (
+    <HomeClient
+      news={news}
+      categories={catRes.data ?? []}
+      events={eventsRes.data ?? []}
+      today={todayIso}
+    />
+  );
 }

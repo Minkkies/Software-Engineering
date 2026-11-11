@@ -375,10 +375,69 @@ function NewsSection({ news, categories }) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Calendar placeholder (รอทีมปฏิทินพัฒนา)                              */
+/* Calendar                                                            */
 /* ------------------------------------------------------------------ */
 
-function CalendarPlaceholder() {
+const THAI_MONTHS = [
+  "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+  "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม",
+];
+const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+
+const EVENT_TYPE_STYLE = {
+  semester: { label: "ภาคการศึกษา", cls: "bg-blue-50 text-blue-700" },
+  exam: { label: "สอบ", cls: "bg-rose-50 text-rose-700" },
+  holiday: { label: "วันหยุด", cls: "bg-emerald-50 text-emerald-700" },
+  activity: { label: "กิจกรรม", cls: "bg-amber-50 text-amber-700" },
+};
+
+// iso = 'YYYY-MM-DD' (เทียบเป็นสตริงได้เลย จึงไม่มีปัญหา timezone)
+const eventsOn = (events, iso) =>
+  events.filter((e) => e.start_date <= iso && (e.end_date ?? e.start_date) >= iso);
+
+const fmtDate = (iso, withYear = false) =>
+  new Date(`${iso}T00:00:00Z`).toLocaleDateString("th-TH", {
+    day: "numeric",
+    month: "short",
+    ...(withYear ? { year: "numeric" } : {}),
+    timeZone: "UTC",
+  });
+
+function CalendarPanel({ events, today }) {
+  const [view, setView] = useState({
+    y: Number(today.slice(0, 4)),
+    m: Number(today.slice(5, 7)) - 1,
+  });
+  const [selected, setSelected] = useState(today);
+
+  // 42 ช่อง (6 สัปดาห์) รวมวันของเดือนก่อน/ถัดไปให้ครบแถว
+  const cells = useMemo(() => {
+    const firstDow = new Date(Date.UTC(view.y, view.m, 1)).getUTCDay();
+    return Array.from({ length: 42 }, (_, i) => {
+      const date = new Date(Date.UTC(view.y, view.m, i - firstDow + 1));
+      return {
+        iso: date.toISOString().slice(0, 10),
+        day: date.getUTCDate(),
+        inMonth: date.getUTCMonth() === view.m,
+      };
+    });
+  }, [view]);
+
+  const datesWithEvents = useMemo(
+    () => new Set(cells.filter((c) => eventsOn(events, c.iso).length > 0).map((c) => c.iso)),
+    [cells, events]
+  );
+
+  const selectedEvents = useMemo(() => eventsOn(events, selected), [events, selected]);
+
+  const shiftMonth = (delta) => {
+    const d = new Date(Date.UTC(view.y, view.m + delta, 1));
+    setView({ y: d.getUTCFullYear(), m: d.getUTCMonth() });
+  };
+
+  const navBtn =
+    "flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50";
+
   return (
     <aside className="flex min-h-[32rem] flex-col overflow-hidden rounded-xl bg-white shadow-sm lg:sticky lg:top-6 lg:self-start">
       <div className="flex items-center justify-between bg-blue-800 px-6 py-4 text-white">
@@ -388,8 +447,101 @@ function CalendarPlaceholder() {
         </Icon>
       </div>
 
-      {/* TODO: ใส่ปฏิทินและรายการกิจกรรมที่นี่ หลังทีมปฏิทินพัฒนาเสร็จ */}
-      <div className="flex-1" />
+      <div className="px-5 pt-5">
+        {/* เลือกเดือน */}
+        <div className="flex items-center justify-between">
+          <button type="button" onClick={() => shiftMonth(-1)} aria-label="เดือนก่อนหน้า" className={navBtn}>
+            <Icon className="h-4 w-4">
+              <path d="m15 6-6 6 6 6" />
+            </Icon>
+          </button>
+          <span className="text-sm font-semibold text-slate-800">
+            {THAI_MONTHS[view.m]} {view.y + 543}
+          </span>
+          <button type="button" onClick={() => shiftMonth(1)} aria-label="เดือนถัดไป" className={navBtn}>
+            <Icon className="h-4 w-4">
+              <path d="m9 6 6 6-6 6" />
+            </Icon>
+          </button>
+        </div>
+
+        {/* ตารางวัน */}
+        <div className="mt-4 grid grid-cols-7 text-center text-xs text-slate-400">
+          {WEEKDAYS.map((d) => (
+            <span key={d} className="py-1">{d}</span>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-y-1 text-center text-sm">
+          {cells.map((c) => {
+            const isSelected = c.iso === selected;
+            const isToday = c.iso === today;
+            return (
+              <button
+                key={c.iso}
+                type="button"
+                onClick={() => setSelected(c.iso)}
+                aria-pressed={isSelected}
+                className={`relative mx-auto flex h-9 w-9 items-center justify-center rounded-lg transition ${
+                  isSelected
+                    ? "bg-blue-800 font-bold text-white"
+                    : isToday
+                    ? "font-bold text-blue-800 ring-1 ring-blue-800/40"
+                    : c.inMonth
+                    ? "text-slate-700 hover:bg-slate-100"
+                    : "text-slate-300 hover:bg-slate-50"
+                }`}
+              >
+                {c.day}
+                {datesWithEvents.has(c.iso) && (
+                  <span
+                    className={`absolute bottom-1 h-1 w-1 rounded-full ${
+                      isSelected ? "bg-white" : "bg-amber-500"
+                    }`}
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* กิจกรรมของวันที่เลือก */}
+      <div className="mx-5 mt-4 flex-1 border-t border-slate-200 pt-4">
+        <p className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+          <span className="h-1.5 w-1.5 rounded-full bg-blue-800" />
+          {selected === today ? "กิจกรรมวันนี้" : "กิจกรรมวันที่"} ({fmtDate(selected, true)})
+        </p>
+
+        {selectedEvents.length > 0 ? (
+          <ul className="mt-3 max-h-60 space-y-3 overflow-y-auto pr-1">
+            {selectedEvents.map((ev) => {
+              const type = EVENT_TYPE_STYLE[ev.event_type] ?? EVENT_TYPE_STYLE.activity;
+              const sameDay = !ev.end_date || ev.end_date === ev.start_date;
+              return (
+                <li key={ev.id} className="rounded-lg bg-slate-50 p-3">
+                  <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${type.cls}`}>
+                    {type.label}
+                  </span>
+                  <p className="mt-1.5 text-sm font-semibold leading-snug text-slate-800">
+                    {ev.title}
+                  </p>
+                  <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-400">
+                    <Icon className="h-3.5 w-3.5">
+                      <circle cx="12" cy="12" r="9" />
+                      <path d="M12 7v5l3 2" />
+                    </Icon>
+                    {sameDay
+                      ? fmtDate(ev.start_date)
+                      : `${fmtDate(ev.start_date)} – ${fmtDate(ev.end_date)}`}
+                  </p>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="mt-6 text-center text-xs text-slate-400">ไม่มีกิจกรรมในวันนี้</p>
+        )}
+      </div>
 
       <div className="p-4">
         <Link
@@ -407,7 +559,7 @@ function CalendarPlaceholder() {
 /* Page                                                                */
 /* ------------------------------------------------------------------ */
 
-export default function HomeClient({ news = [], categories = [] }) {
+export default function HomeClient({ news = [], categories = [], events = [], today }) {
   return (
     <main>
       <Hero />
@@ -416,7 +568,7 @@ export default function HomeClient({ news = [], categories = [] }) {
       <section className="bg-slate-50">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <NewsSection news={news} categories={categories} />
-          <CalendarPlaceholder />
+          <CalendarPanel events={events} today={today} />
         </div>
       </section>
     </main>
